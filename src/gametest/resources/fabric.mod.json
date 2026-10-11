@@ -1,0 +1,10 @@
+{
+	"schemaVersion": 1,
+	"id": "twitchplays-gametest",
+	"version": "1.0.0",
+	"name": "Twitch Plays game test",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-client-gametest": ["nl.zwollerob.twitchplays.gametest.TwitchPlaysClientGameTest"]
+	}
+}

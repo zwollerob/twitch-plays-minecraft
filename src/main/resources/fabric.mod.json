@@ -1,0 +1,32 @@
+{
+	"schemaVersion": 1,
+	"id": "twitchplays",
+	"version": "${version}",
+	"name": "Twitch Plays Minecraft",
+	"description": "Laat Twitch-chat je speler besturen met commando's, kanaalpunten en bits.",
+	"authors": [
+		"Zw_038_olle"
+	],
+	"contact": {
+		"homepage": "https://github.com/zwollerob/twitch-plays-minecraft",
+		"sources": "https://github.com/zwollerob/twitch-plays-minecraft",
+		"issues": "https://github.com/zwollerob/twitch-plays-minecraft/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/twitchplays/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"nl.zwollerob.twitchplays.TwitchPlaysClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"mixins": [
+		"twitchplays.mixins.json"
+	]
+}
