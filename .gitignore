@@ -41,3 +41,6 @@ replay_*.log
 
 # Minecraft logs from game runs
 logs/
+
+# Windows
+Thumbs.db
