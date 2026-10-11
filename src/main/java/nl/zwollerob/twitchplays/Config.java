@@ -56,6 +56,20 @@ public final class Config {
 	public List<String> disabled = new ArrayList<>();
 	/** Pop-ups in Minecraft for subs, follows, donations, raids and bits. */
 	public Alerts alerts = new Alerts();
+	/** One big cheer buys exclusive control for a while. */
+	public TakeoverSettings takeover = new TakeoverSettings();
+
+	public static final class TakeoverSettings {
+		public boolean enabled = true;
+		/** Smallest single cheer that buys control. */
+		public int minBits = 1000;
+		/** One minute of control per this many bits: 1000 bits = 10 minutes. */
+		public int bitsPerMinute = 100;
+		/** Most control one viewer can have at once, also after cheering again. */
+		public int maxMinutes = 30;
+		/** Confirm in Twitch chat (needs /twitchplays login). */
+		public boolean chatMessages = true;
+	}
 
 	public static final class Alerts {
 		public boolean enabled = true;
@@ -67,6 +81,7 @@ public final class Config {
 		public boolean donations = true;
 		public boolean raids = true;
 		public boolean bits = true;
+		public boolean takeover = true;
 		/** Smaller cheers don't get an alert. */
 		public int bitsMinimum = 100;
 		public boolean title = true;
@@ -85,6 +100,7 @@ public final class Config {
 				case "donations" -> donations;
 				case "raids" -> raids;
 				case "bits" -> bits;
+				case "takeover" -> takeover;
 				default -> false;
 			};
 		}
@@ -123,6 +139,7 @@ public final class Config {
 		if (aliases == null) aliases = defaults.aliases;
 		if (disabled == null) disabled = defaults.disabled;
 		if (alerts == null) alerts = defaults.alerts;
+		if (takeover == null) takeover = defaults.takeover;
 		voteSeconds = Math.max(1, voteSeconds);
 		userCooldownMs = Math.max(0, userCooldownMs);
 		maxHoldSeconds = Math.max(0.1, maxHoldSeconds);

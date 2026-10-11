@@ -121,6 +121,7 @@ public final class AlertPlayer {
 			case DONATION -> 5 + amount;
 			case RAID -> 6 + amount / 5;
 			case BITS -> 4 + amount / 100;
+			case TAKEOVER -> 10 + amount;
 		};
 		return Math.min(count, 40);
 	}
@@ -194,6 +195,8 @@ public final class AlertPlayer {
 						new int[]{0xFF6B6B, 0xFFA500, 0xFFD166});
 				case BITS -> new Look(alert.amount() + " BITS!", user, 0xC77DFF,
 						new int[]{0xC77DFF, 0x7FD4FF, 0x5CE65C});
+				case TAKEOVER -> new Look("OVERNAME!", user + " bestuurt alleen - " + alert.detail(), 0xFFD166,
+						new int[]{0xFFD166, 0xFFA500, 0x9146FF, 0xFFFFFF});
 			};
 		}
 	}

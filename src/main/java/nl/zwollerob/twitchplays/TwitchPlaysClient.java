@@ -2,6 +2,7 @@ package nl.zwollerob.twitchplays;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -59,6 +60,7 @@ public class TwitchPlaysClient implements ClientModInitializer {
 				twitch.irc.disconnect();
 				twitch.eventSub.stop();
 				twitch.streamElements.stop();
+				twitch.saveTakeover();
 			}
 		});
 
@@ -126,7 +128,15 @@ public class TwitchPlaysClient implements ClientModInitializer {
 				.then(ClientCommands.literal("alerts")
 						.then(ClientCommands.literal("on").executes(ctx -> setAlerts(true)))
 						.then(ClientCommands.literal("off").executes(ctx -> setAlerts(false))))
-				.then(alertTests()));
+				.then(alertTests())
+				.then(ClientCommands.literal("takeover")
+						.then(ClientCommands.literal("stop").executes(ctx -> run(() -> twitch.stopTakeover())))
+						// Pretend a viewer cheered, to see a takeover without spending bits.
+						.then(ClientCommands.literal("test")
+								.executes(ctx -> run(() -> twitch.offerTakeover("local-takeover-test", "TestKijker", 1000)))
+								.then(ClientCommands.argument("bits", IntegerArgumentType.integer(1))
+										.executes(ctx -> run(() -> twitch.offerTakeover("local-takeover-test", "TestKijker",
+												IntegerArgumentType.getInteger(ctx, "bits"))))))));
 	}
 
 	/** /twitchplays alert <type>: shows an example alert so the streamer can see what it looks like. */
@@ -140,6 +150,7 @@ public class TwitchPlaysClient implements ClientModInitializer {
 		examples.put("donation", Alert.of(Alert.Type.DONATION, "TestKijker", "€ 5,00", 5));
 		examples.put("raid", Alert.of(Alert.Type.RAID, "TestStreamer", "", 42));
 		examples.put("bits", Alert.of(Alert.Type.BITS, "TestKijker", "", 500));
+		examples.put("takeover", Alert.of(Alert.Type.TAKEOVER, "TestKijker", "10 minuten", 10));
 		LiteralArgumentBuilder<FabricClientCommandSource> alert = ClientCommands.literal("alert");
 		examples.forEach((name, example) -> alert.then(ClientCommands.literal(name).executes(ctx -> run(() -> twitch.testAlert(example)))));
 		return alert;

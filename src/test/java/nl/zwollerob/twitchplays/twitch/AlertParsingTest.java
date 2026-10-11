@@ -62,6 +62,15 @@ class AlertParsingTest {
 	}
 
 	@Test
+	void timeoutNamesTheViewer() {
+		IrcLine timeout = IrcLine.parse("@ban-duration=600;room-id=1;target-user-id=42;tmi-sent-ts=1 :tmi.twitch.tv CLEARCHAT #streamer :trol");
+		assertEquals("CLEARCHAT", timeout.command());
+		assertEquals("42", timeout.tag("target-user-id"));
+		IrcLine clearAll = IrcLine.parse("@room-id=1 :tmi.twitch.tv CLEARCHAT #streamer");
+		assertEquals("", clearAll.tag("target-user-id"), "clearing the whole chat has no target");
+	}
+
+	@Test
 	void sharedChatBitsDoNotCount() {
 		ChatMessage own = ChatMessage.parse("@bits=100;room-id=1;user-id=5 :a!a@a.tmi.twitch.tv PRIVMSG #c :Cheer100");
 		ChatMessage other = ChatMessage.parse("@bits=100;room-id=1;source-room-id=2;user-id=5 :a!a@a.tmi.twitch.tv PRIVMSG #c :Cheer100");

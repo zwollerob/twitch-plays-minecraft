@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.1.0 (2026-10-11)
+
+### Overname met bits
+- Eén cheer van 1000+ bits geeft die kijker alleen de controle: 1 minuut per 100 bits, maximaal 30 minuten. Geen cooldown, geen stemronde, en ook de betaalde commando's zijn gratis.
+- Wie tijdens een overname 1000+ bits cheert, komt in een wachtrij. Dezelfde kijker die nog eens cheert, krijgt de tijd erbij (tot 30 minuten).
+- Cheers en kanaalpunt-beloningen van andere kijkers blijven werken tijdens een overname.
+- De klok loopt alleen als er gespeeld wordt: niet bij F8, een open menu of pauze. De resterende tijd blijft bewaard na een herstart.
+- Moderators beëindigen een overname met `!takeover stop`. Een timeout of ban stopt de overname van die kijker vanzelf.
+- Melding "OVERNAME!" met vuurwerk, en in de overlay de naam, een aftelklok en de wachtrij.
+- Met de Twitch-login tellen ook Power-ups mee (Combos niet; die geeft Twitch niet door). De mod bevestigt een overname met een bericht in je Twitch-chat.
+- `/twitchplays takeover test [bits]` en `/twitchplays takeover stop` om het uit te proberen.
+
+### Moderators
+- `!anarchie`, `!democratie` en `!takeover stop` werken nu ook als de streamer de besturing met F8 heeft uitgezet.
+
+### Handleidingen voor Discord
+- Kijkershandleiding (`docs/kijkers-handleiding.png`): alle kijkerscommando's, bits, kanaalpunten, de overname en handige combinaties.
+- Mod-handleiding (`docs/mod-handleiding.png`): commando's voor moderators en wat ze doen bij trollen of chaos.
+
+### Login
+- `/twitchplays login` vraagt nu ook toestemming om bits te lezen en berichten in je chat te zetten. Wie met 1.0.0 al was ingelogd, logt één keer opnieuw in.
+
 ## 1.0.0 (2026-10-11)
 
 Eerste uitgave, voor Minecraft 26.3 met Fabric.

@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Twitch Plays Minecraft - commando's</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0b1a;
+    --panel: #1a1430;
+    --panel-2: #221a3d;
+    --line: #34295a;
+    --text: #ece8f7;
+    --muted: #a59cc4;
+    --purple: #9146ff;
+    --purple-soft: #bf94ff;
+    --green: #5ce65c;
+    --gold: #ffd166;
+    --pink: #ff6ec7;
+    --cyan: #7fd4ff;
+    --orange: #ff9f43;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body {
+    width: 1400px;
+    font-family: "Inter", system-ui, sans-serif;
+    color: var(--text);
+    padding: 44px 44px 36px;
+    background:
+      radial-gradient(ellipse 900px 420px at 15% -5%, rgba(145, 70, 255, 0.35), transparent 70%),
+      radial-gradient(ellipse 700px 380px at 100% 0%, rgba(92, 230, 92, 0.12), transparent 70%),
+      var(--bg);
+  }
+
+  header { display: flex; align-items: center; gap: 28px; margin-bottom: 26px; }
+  .logo {
+    width: 96px; height: 96px; flex: none;
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
+    border: 4px solid #000; box-shadow: 0 0 0 4px var(--purple), 0 10px 30px rgba(145, 70, 255, 0.45);
+    image-rendering: pixelated;
+  }
+  .logo span:nth-child(odd) { background: #5d9c3a; }
+  .logo span:nth-child(even) { background: #6fb544; }
+  .logo span:nth-child(n+9) { background: #8b5a2b; }
+  .logo span:nth-child(n+9):nth-child(even) { background: #7a4e25; }
+  .logo span:nth-child(5), .logo span:nth-child(8) { background: #5a8f35; }
+  h1 {
+    font-family: "Silkscreen", monospace; font-weight: 700;
+    font-size: 54px; line-height: 1; letter-spacing: 1px;
+  }
+  h1 .twitch { color: var(--purple-soft); }
+  .subtitle { margin-top: 10px; font-size: 22px; color: var(--muted); font-weight: 500; }
+  .subtitle b { color: var(--text); }
+
+  .how {
+    display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 16px; margin-bottom: 22px;
+  }
+  .how .box {
+    background: var(--panel); border: 2px solid var(--line); border-radius: 14px; padding: 16px 18px;
+  }
+  .how h3 { font-family: "Silkscreen", monospace; font-size: 18px; margin-bottom: 8px; letter-spacing: .5px; }
+  .how p { font-size: 15.5px; line-height: 1.45; color: #d6d0ea; }
+  .how p + p { margin-top: 6px; }
+  .how .anarchy h3 { color: var(--orange); }
+  .how .democracy h3 { color: var(--cyan); }
+  .how .start h3 { color: var(--green); }
+  code, .cmd {
+    font-family: "JetBrains Mono", monospace; font-weight: 700;
+  }
+  .how code { color: var(--gold); font-size: 15px; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 18px; }
+  .card {
+    background: var(--panel); border: 2px solid var(--line); border-radius: 16px; overflow: hidden;
+  }
+  .card > h2 {
+    display: flex; align-items: center; gap: 12px;
+    font-family: "Silkscreen", monospace; font-weight: 700; font-size: 22px; letter-spacing: .5px;
+    padding: 12px 18px; background: var(--panel-2); border-bottom: 2px solid var(--line);
+  }
+  .card > h2 .dot { width: 14px; height: 14px; flex: none; box-shadow: 0 0 12px currentColor; background: currentColor; }
+  .row {
+    display: grid; grid-template-columns: 245px 1fr auto; gap: 14px; align-items: center;
+    padding: 9px 18px; border-bottom: 1px solid rgba(52, 41, 90, 0.7);
+  }
+  .row:last-child { border-bottom: none; }
+  .cmd { font-size: 19px; color: #fff; }
+  .alias { display: block; margin-top: 2px; font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .what { font-size: 16px; line-height: 1.35; color: #ddd8ef; }
+  .what small { display: block; color: var(--muted); font-size: 13.5px; margin-top: 2px; }
+  .chip {
+    font-size: 12.5px; font-weight: 700; white-space: nowrap;
+    padding: 4px 9px; border-radius: 999px; background: rgba(145, 70, 255, 0.18); color: var(--purple-soft);
+    border: 1px solid rgba(191, 148, 255, 0.35);
+  }
+  .chip.none { visibility: hidden; }
+
+  .c-move { color: var(--green); }
+  .c-look { color: var(--cyan); }
+  .c-act { color: var(--orange); }
+  .c-build { color: var(--gold); }
+  .c-inv { color: var(--pink); }
+  .c-pay { color: var(--purple-soft); }
+
+  .paid { grid-column: 1 / -1; }
+  .paid-body { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; }
+  .takeover { grid-column: 1 / -1; border-color: rgba(255, 209, 102, 0.55); box-shadow: 0 0 28px rgba(255, 209, 102, 0.12); }
+  .takeover > h2 { background: linear-gradient(90deg, rgba(255, 209, 102, 0.18), var(--panel-2)); }
+  .takeover-body { display: grid; grid-template-columns: 1.3fr 1fr 1fr; }
+  .takeover-hero { display: flex; align-items: center; gap: 18px; padding: 16px 20px; border-right: 1px solid var(--line); }
+  .takeover-hero .crown { font-size: 54px; line-height: 1; filter: drop-shadow(0 0 12px rgba(255, 209, 102, 0.6)); }
+  .takeover-hero .big { font-size: 26px; font-weight: 800; }
+  .takeover-hero .big .cmd { color: var(--gold); font-size: 26px; }
+  .takeover-hero .sub { margin-top: 6px; font-size: 15px; color: var(--muted); }
+  .paid-col { padding: 14px 18px; border-right: 1px solid var(--line); }
+  .paid-col:last-child { border-right: none; }
+  .paid-col h4 { font-size: 16px; font-weight: 800; margin-bottom: 8px; color: var(--text); }
+  .paid-col p { font-size: 15px; line-height: 1.45; color: #d6d0ea; }
+  .paid-col p + p { margin-top: 6px; }
+  .price { display: flex; justify-content: space-between; align-items: baseline; padding: 5px 0; border-bottom: 1px dashed rgba(52, 41, 90, 0.9); }
+  .price:last-child { border-bottom: none; }
+  .price .cmd { font-size: 17px; }
+  .price .cost { font-weight: 800; color: var(--purple-soft); font-size: 15px; }
+  .price .desc { display: block; font-size: 13px; color: var(--muted); }
+  .reward { padding: 5px 0; }
+  .reward b { color: var(--gold); }
+
+  .combos { grid-column: 1 / -1; }
+  .combo-body { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .combo { padding: 14px 18px; border-right: 1px solid var(--line); }
+  .combo:last-child { border-right: none; }
+  .combo h4 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+  .combo ol { list-style: none; counter-reset: step; }
+  .combo li { counter-increment: step; display: flex; gap: 8px; align-items: baseline; padding: 3px 0; font-size: 14.5px; color: #d6d0ea; }
+  .combo li::before {
+    content: counter(step); flex: none; width: 20px; height: 20px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line);
+  }
+  .combo code { color: #fff; font-size: 14.5px; }
+
+  footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; }
+  footer .keys { display: flex; gap: 18px; }
+  footer b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  <div>
+    <h1><span class="twitch">Twitch</span> Plays Minecraft</h1>
+    <p class="subtitle">Jij bestuurt de streamer! Typ een commando <b>als los bericht</b> in de chat.</p>
+  </div>
+</header>
+
+<section class="how">
+  <div class="box start">
+    <h3>Zo werkt het</h3>
+    <p>Elk commando begint met <code>!</code>. Het getal erachter is optioneel: <code>!forward</code> loopt 1 seconde, <code>!forward 3</code> loopt 3 seconden (max 5).</p>
+    <p>Engels of Nederlands mag allebei: <code>!forward</code> = <code>!w</code> = <code>!vooruit</code>.</p>
+  </div>
+  <div class="box anarchy">
+    <h3>Anarchie</h3>
+    <p>Elk commando wordt <b>meteen</b> uitgevoerd. Iedereen tegelijk = chaos!</p>
+    <p>Je kunt elke 1,5 seconde een commando sturen.</p>
+  </div>
+  <div class="box democracy">
+    <h3>Democratie</h3>
+    <p>Je <b>stemt</b>: elke 5 seconden wint het commando met de meeste stemmen.</p>
+    <p>Eén stem per ronde; je laatste bericht telt.</p>
+  </div>
+</section>
+
+<div class="grid">
+  <div class="col">
+<section class="card">
+    <h2 class="c-move"><span class="dot"></span><span>Lopen en springen</span></h2>
+    <div class="row"><div><span class="cmd">!forward</span><span class="alias">!w  !vooruit</span></div><div class="what">Vooruit lopen</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!back</span><span class="alias">!s  !achteruit</span></div><div class="what">Achteruit lopen</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!left  !right</span><span class="alias">!a  !d  !links  !rechts</span></div><div class="what">Opzij stappen</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!jump</span><span class="alias">!j  !spring</span></div><div class="what">Springen</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!sneak</span><span class="alias">!sluip</span></div><div class="what">Sluipen</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!sprint</span><span class="alias">!ren</span></div><div class="what">Sprinten (vooruit)</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!jumpforward</span><span class="alias">!jf  !hop</span></div><div class="what">Springend vooruit, een blok op<small>Blok verder weg? <span class="cmd" style="font-size:13px">!jf 2</span></small></div><span class="chip">sprongen</span></div>
+    <div class="row"><div><span class="cmd">!sprintjump</span><span class="alias">!sj</span></div><div class="what">Sprintsprong over een gat (2–3 blokken)</div><span class="chip">sprongen</span></div>
+    <div class="row"><div><span class="cmd">!stap</span><span class="alias">!step  !walk</span></div><div class="what">Precies zoveel blokken vooruit<small>Stopt voor een muur of boom</small></div><span class="chip">blokken</span></div>
+    <div class="row"><div><span class="cmd">!stop</span></div><div class="what">Alles loslaten</div><span class="chip none">-</span></div>
+  </section>
+<section class="card">
+    <h2 class="c-inv"><span class="dot"></span><span>Inventory</span></h2>
+    <div class="row"><div><span class="cmd">!1 … !9</span><span class="alias">!slot 3</span></div><div class="what">Hotbar-slot kiezen</div><span class="chip none">-</span></div>
+    <div class="row"><div><span class="cmd">!next  !prev</span><span class="alias">!volgende  !vorige</span></div><div class="what">Volgend / vorig slot</div><span class="chip none">-</span></div>
+    <div class="row"><div><span class="cmd">!pak &lt;item&gt;</span><span class="alias">!grab  !take</span></div><div class="what">Item uit de héle inventory in de hand<small><span class="cmd" style="font-size:13px">!pak diamond pickaxe</span>  of  <span class="cmd" style="font-size:13px">!pak brood</span></small></div><span class="chip">itemnaam</span></div>
+    <div class="row"><div><span class="cmd">!inv</span><span class="alias">!inventory</span></div><div class="what">Inventory 3 seconden laten zien</div><span class="chip none">-</span></div>
+    <div class="row"><div><span class="cmd">!drop</span><span class="alias">!q  !gooi</span></div><div class="what">Item weggooien</div><span class="chip">aantal</span></div>
+    <div class="row"><div><span class="cmd">!swap</span><span class="alias">!offhand  !wissel</span></div><div class="what">Wisselen met de andere hand</div><span class="chip none">-</span></div>
+  </section>
+  </div>
+  <div class="col">
+<section class="card">
+    <h2 class="c-look"><span class="dot"></span><span>Kijken en draaien</span></h2>
+    <div class="row"><div><span class="cmd">!lookleft</span><span class="alias">!ll  !kijk links</span></div><div class="what">Naar links draaien (standaard 45°)</div><span class="chip">graden</span></div>
+    <div class="row"><div><span class="cmd">!lookright</span><span class="alias">!lr  !kijk rechts</span></div><div class="what">Naar rechts draaien</div><span class="chip">graden</span></div>
+    <div class="row"><div><span class="cmd">!lookup</span><span class="alias">!lu  !kijk omhoog</span></div><div class="what">Omhoog kijken (standaard 30°)</div><span class="chip">graden</span></div>
+    <div class="row"><div><span class="cmd">!lookdown</span><span class="alias">!ld  !kijk omlaag</span></div><div class="what">Omlaag kijken</div><span class="chip">graden</span></div>
+    <div class="row"><div><span class="cmd">!turn</span><span class="alias">!draai</span></div><div class="what">180° omdraaien</div><span class="chip none">-</span></div>
+    <div class="row"><div><span class="cmd">!noord !oost<br>!zuid !west</span><span class="alias">!north  !kijk noord</span></div><div class="what">Precies die windrichting op kijken, recht vooruit<small>Linksboven in beeld staat welke kant je op kijkt</small></div><span class="chip none">-</span></div>
+  </section>
+<section class="card">
+    <h2 class="c-act"><span class="dot"></span><span>Hakken, slaan, gebruiken</span></h2>
+    <div class="row"><div><span class="cmd">!mine</span><span class="alias">!dig  !hak</span></div><div class="what">Linkermuis vasthouden: blok hakken</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!attack</span><span class="alias">!hit  !sla</span></div><div class="what">Slaan / klikken</div><span class="chip">aantal</span></div>
+    <div class="row"><div><span class="cmd">!use</span><span class="alias">!place  !plaats</span></div><div class="what">Rechtsklik: blok plaatsen, deur openen</div><span class="chip">aantal</span></div>
+    <div class="row"><div><span class="cmd">!holduse</span><span class="alias">!hold</span></div><div class="what">Rechtermuis vasthouden: boog, schild</div><span class="chip">seconden</span></div>
+    <div class="row"><div><span class="cmd">!eat</span><span class="alias">!eet</span></div><div class="what">Eten pakken en opeten</div><span class="chip none">-</span></div>
+  </section>
+<section class="card">
+    <h2 class="c-build"><span class="dot"></span><span>Bouwen</span></h2>
+    <div class="row"><div><span class="cmd">!pillar</span><span class="alias">!toren  !bouwop</span></div><div class="what">Jezelf omhoog bouwen (max 5)<small>Pakt zelf blokken uit de inventory</small></div><span class="chip">blokken</span></div>
+    <div class="row"><div><span class="cmd">!bridge</span><span class="alias">!brug</span></div><div class="what">Brug recht vooruit bouwen en eroverheen sluipen (standaard 3, max 10)</div><span class="chip">blokken</span></div>
+  </section>
+  </div>
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  <section class="card paid">
+    <h2 class="c-pay"><span class="dot"></span><span>Bits en kanaalpunten</span></h2>
+    <div class="paid-body">
+      <div class="paid-col">
+        <h4>Betaalde commando's</h4>
+        <div class="price"><span><span class="cmd">!dropstack</span><span class="desc">hele stack weggooien</span></span><span class="cost">100 bits</span></div>
+        <div class="price"><span><span class="cmd">!unequip</span><span class="desc">armor uittrekken</span></span><span class="cost">300 bits</span></div>
+        <div class="price"><span><span class="cmd">!shuffle</span><span class="desc">inventory door elkaar</span></span><span class="cost">500 bits</span></div>
+        <p style="margin-top:8px;font-size:13.5px;color:var(--muted)">Alleen met een cheer of kanaalpunten; gewoon typen doet niets.</p>
+      </div>
+      <div class="paid-col">
+        <h4>Cheer met een commando</h4>
+        <p>Zet het commando in je cheer: <code style="color:var(--gold)">Cheer100 !jump</code></p>
+        <p>Je commando gaat <b>meteen</b>, ook in democratie en zonder te wachten. Elk commando werkt vanaf 1 bit; de betaalde commando's kosten meer.</p>
+      </div>
+      <div class="paid-col">
+        <h4>Kanaalpunten-beloningen</h4>
+        <div class="reward"><b>Twitch bestuurt mij</b><br>typ zelf een commando, zoals <code style="color:#fff">pillar 3</code></div>
+        <div class="reward"><b>Hussel mijn inventory</b><br>inventory door elkaar</div>
+        <div class="reward"><b>Trek mijn armor uit</b><br>armor uit</div>
+      </div>
+      <div class="paid-col">
+        <h4>Steun = vuurwerk!</h4>
+        <p>Bij een sub, gift sub, follow, donatie, raid of cheer vanaf 100 bits verschijnt je naam groot in beeld, met vuurwerk.</p>
+        <p>Hoe meer steun, hoe groter de show.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card takeover">
+    <h2 class="c-build"><span class="dot"></span><span>Overname: jij bestuurt alleen</span></h2>
+    <div class="takeover-body">
+      <div class="takeover-hero">
+        <div class="crown">👑</div>
+        <div>
+          <div class="big"><span class="cmd">Cheer1000</span> = 10 minuten</div>
+          <div class="sub">1 minuut per 100 bits &middot; <span class="cmd" style="font-size:15px">Cheer2000</span> = 20 min &middot; max 30 min</div>
+        </div>
+      </div>
+      <div class="paid-col">
+        <h4>Wat mag je?</h4>
+        <p>Alleen <b>jouw</b> commando's tellen: geen wachttijd, geen stemronde.</p>
+        <p>Ook <span class="cmd" style="font-size:14px">!shuffle</span>, <span class="cmd" style="font-size:14px">!unequip</span> en <span class="cmd" style="font-size:14px">!dropstack</span> zijn dan gratis.</p>
+      </div>
+      <div class="paid-col">
+        <h4>Goed om te weten</h4>
+        <p>Het moet <b>één cheer</b> van 1000+ bits zijn. Power-ups tellen ook mee.</p>
+        <p>Is iemand anders al aan de beurt? Dan kom je in de <b>wachtrij</b>. Nog eens cheeren = extra tijd.</p>
+        <p>De klok staat stil als de streamer pauzeert.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card combos">
+    <h2 class="c-move"><span class="dot"></span><span>Handige combinaties</span></h2>
+    <div class="combo-body">
+      <div class="combo">
+        <h4>Boom hakken</h4>
+        <ol><li><code>!oost</code> kijk naar de boom</li><li><code>!stap 10</code> loop ernaartoe</li><li><code>!pak bijl</code></li><li><code>!mine 5</code></li></ol>
+      </div>
+      <div class="combo">
+        <h4>Uit een kuil klimmen</h4>
+        <ol><li><code>!pillar 3</code> bouw omhoog</li><li><code>!jf</code> spring eruit</li></ol>
+      </div>
+      <div class="combo">
+        <h4>Over een ravijn</h4>
+        <ol><li><code>!noord</code> kies de richting</li><li><code>!bridge 8</code> bouw de brug</li></ol>
+      </div>
+      <div class="combo">
+        <h4>Honger?</h4>
+        <ol><li><code>!eet</code> pakt en eet eten</li><li><code>!inv</code> zie wat er nog is</li></ol>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span>Commando's werken alleen <b>als los bericht</b>: "ik ga !forward" doet niets.</span>
+  <span>Twitch Plays Minecraft</span>
+</footer>
+
+<script>
+  // Used when rendering: the page height, once the fonts have loaded.
+  document.fonts.ready.then(() => document.body.setAttribute("data-height", Math.ceil(document.documentElement.scrollHeight)));
+</script>
+</body>
+</html>

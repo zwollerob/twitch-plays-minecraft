@@ -23,6 +23,8 @@ public final class IrcClient {
 	private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
 	private final Consumer<ChatMessage> onMessage;
 	private final Consumer<Alert> onAlert;
+	/** User id of a viewer who got a timeout or ban. */
+	private final Consumer<String> onUserRemoved;
 	private final Consumer<String> onStatus;
 
 	private volatile State state = State.DISCONNECTED;
@@ -31,9 +33,10 @@ public final class IrcClient {
 	private int generation;
 	private int failures;
 
-	public IrcClient(Consumer<ChatMessage> onMessage, Consumer<Alert> onAlert, Consumer<String> onStatus) {
+	public IrcClient(Consumer<ChatMessage> onMessage, Consumer<Alert> onAlert, Consumer<String> onUserRemoved, Consumer<String> onStatus) {
 		this.onMessage = onMessage;
 		this.onAlert = onAlert;
+		this.onUserRemoved = onUserRemoved;
 		this.onStatus = onStatus;
 	}
 
@@ -156,6 +159,13 @@ public final class IrcClient {
 			}
 			switch (irc.command()) {
 				case "PRIVMSG" -> onMessage.accept(ChatMessage.from(irc));
+				case "CLEARCHAT" -> {
+					// With a target it is a timeout or ban of one viewer; without, the whole chat was cleared.
+					String target = irc.tag("target-user-id");
+					if (!target.isEmpty() && !irc.fromOtherRoom()) {
+						onUserRemoved.accept(target);
+					}
+				}
 				case "USERNOTICE" -> {
 					Alert alert = Alert.fromUserNotice(irc);
 					if (alert != null) {

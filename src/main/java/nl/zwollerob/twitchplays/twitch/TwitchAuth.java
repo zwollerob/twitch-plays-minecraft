@@ -16,7 +16,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -28,9 +30,18 @@ import java.util.stream.Collectors;
  * Requires the Client ID of a "Public" app registered on dev.twitch.tv.
  */
 public final class TwitchAuth {
-	public static final String SCOPES = "channel:read:redemptions";
+	public static final String SCOPE_REDEMPTIONS = "channel:read:redemptions";
+	/** Bits from Power-ups, which don't show up as a cheer in chat. */
+	public static final String SCOPE_BITS = "bits:read";
+	/** Confirmations of a takeover in Twitch chat. */
+	public static final String SCOPE_CHAT = "user:write:chat";
+	public static final String SCOPES = String.join(" ", SCOPE_REDEMPTIONS, SCOPE_BITS, SCOPE_CHAT);
 
-	public record Token(String accessToken, String refreshToken, String userId, String login) {
+	/** {@code scopes} is null for logins saved by version 1.0.0, which only had channel point access. */
+	public record Token(String accessToken, String refreshToken, String userId, String login, List<String> scopes) {
+		public boolean has(String scope) {
+			return scopes == null ? SCOPE_REDEMPTIONS.equals(scope) : scopes.contains(scope);
+		}
 	}
 
 	public record DeviceCode(String userCode, String verificationUri) {
@@ -146,7 +157,11 @@ public final class TwitchAuth {
 			throw new IOException("token ongeldig: " + validate.body());
 		}
 		JsonObject info = JsonParser.parseString(validate.body()).getAsJsonObject();
-		Token result = new Token(access, refresh, info.get("user_id").getAsString(), info.get("login").getAsString());
+		List<String> scopes = new ArrayList<>();
+		if (info.has("scopes") && info.get("scopes").isJsonArray()) {
+			info.getAsJsonArray("scopes").forEach(scope -> scopes.add(scope.getAsString()));
+		}
+		Token result = new Token(access, refresh, info.get("user_id").getAsString(), info.get("login").getAsString(), scopes);
 		token = result;
 		SecretStore.write(file, GSON.toJson(result));
 		return result;

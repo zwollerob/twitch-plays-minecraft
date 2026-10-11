@@ -20,7 +20,9 @@ public record Alert(Type type, String user, String detail, int amount, String gi
 		FOLLOW("follows"),
 		DONATION("donations"),
 		RAID("raids"),
-		BITS("bits");
+		BITS("bits"),
+		/** A viewer gets exclusive control; detail is the duration ("10 minuten"). */
+		TAKEOVER("takeover");
 
 		/** The config switch (alerts.subs, alerts.gifts, ...) that turns this type on or off. */
 		public final String setting;

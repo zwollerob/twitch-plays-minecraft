@@ -6,6 +6,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.Direction;
 import nl.zwollerob.twitchplays.TwitchPlays;
+import nl.zwollerob.twitchplays.command.Takeover;
 import nl.zwollerob.twitchplays.command.VoteRound;
 import nl.zwollerob.twitchplays.game.Controller;
 import nl.zwollerob.twitchplays.twitch.IrcClient;
@@ -68,6 +69,14 @@ public final class Overlay {
 			stateColor = 0xFFFF9F43;
 		}
 		lines.add(new Line("Twitch Plays  " + state, stateColor));
+		Takeover.Turn takeover = twitch.takeover.current();
+		if (takeover != null) {
+			String paused = twitch.takeoverRunning(mc) ? "" : "  (pauze)";
+			lines.add(new Line("Overname " + TwitchPlays.clock(takeover.remainingMs()) + paused, TwitchPlays.COLOR_TAKEOVER, takeover.name));
+			if (twitch.takeover.waiting() > 0) {
+				lines.add(new Line("Wachtrij: " + twitch.takeover.waiting(), TwitchPlays.COLOR_TAKEOVER));
+			}
+		}
 		if (mc.player != null) {
 			// So chat knows which way !north, !step and !bridge go.
 			lines.add(new Line("Kijkt naar: " + compassName(mc.player.getDirection()), TwitchPlays.COLOR_INFO));

@@ -8,26 +8,43 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.WebSocket;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
- * Receives channel point redemptions through EventSub over WebSocket.
+ * Receives channel point redemptions and Bits (cheers and Power-ups) through EventSub over WebSocket.
  * Twitch closes the socket if we don't subscribe within 10 seconds of the welcome,
  * and sends a keepalive at least every ~10 seconds while it is healthy.
  */
 public final class EventSubClient {
 	private static final String DEFAULT_URL = "wss://eventsub.wss.twitch.tv/ws";
-	private static final String TYPE = "channel.channel_points_custom_reward_redemption.add";
+	private static final String TYPE_REDEMPTION = "channel.channel_points_custom_reward_redemption.add";
+	private static final String TYPE_BITS = "channel.bits.use";
 
 	public record Redemption(String userName, String rewardTitle, String userInput) {
 	}
 
+	/** Bits used in the channel; {@code type} is "cheer", "power_up" or "custom_power_up". */
+	public record BitsUse(String userId, String userName, int bits, String type) {
+	}
+
 	private final TwitchAuth auth;
 	private final Consumer<Redemption> onRedemption;
+	private final Consumer<BitsUse> onBits;
 	private final Consumer<String> onStatus;
+	/** Twitch may deliver a notification twice; remember the last message ids. */
+	private final Set<String> seenMessages = Collections.synchronizedSet(Collections.newSetFromMap(new LinkedHashMap<>() {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+			return size() > 500;
+		}
+	}));
 
 	private volatile String clientId;
 	private volatile boolean active;
@@ -38,9 +55,10 @@ public final class EventSubClient {
 	private int failures;
 	private ScheduledFuture<?> watchdog;
 
-	public EventSubClient(TwitchAuth auth, Consumer<Redemption> onRedemption, Consumer<String> onStatus) {
+	public EventSubClient(TwitchAuth auth, Consumer<Redemption> onRedemption, Consumer<BitsUse> onBits, Consumer<String> onStatus) {
 		this.auth = auth;
 		this.onRedemption = onRedemption;
+		this.onBits = onBits;
 		this.onStatus = onStatus;
 	}
 
@@ -115,13 +133,26 @@ public final class EventSubClient {
 		}
 	}
 
-	private void subscribe(int gen, String sessionId, boolean retried) {
+	private void subscribeAll(int gen, String sessionId) {
+		TwitchAuth.Token token = auth.token();
+		if (token == null) {
+			return;
+		}
+		subscribe(gen, sessionId, TYPE_REDEMPTION, "Kanaalpunten", false);
+		if (token.has(TwitchAuth.SCOPE_BITS)) {
+			subscribe(gen, sessionId, TYPE_BITS, "Bits van Power-ups", false);
+		} else {
+			onStatus.accept("Log opnieuw in met /twitchplays login, zodat ook Power-ups meetellen voor een overname.");
+		}
+	}
+
+	private void subscribe(int gen, String sessionId, String type, String label, boolean retried) {
 		TwitchAuth.Token token = auth.token();
 		if (token == null || gen != generation) {
 			return;
 		}
 		JsonObject body = new JsonObject();
-		body.addProperty("type", TYPE);
+		body.addProperty("type", type);
 		body.addProperty("version", "1");
 		JsonObject condition = new JsonObject();
 		condition.addProperty("broadcaster_user_id", token.userId());
@@ -141,18 +172,17 @@ public final class EventSubClient {
 			int status = response.statusCode();
 			if (status == 202 || status == 409) {
 				failures = 0;
-				onStatus.accept("Kanaalpunten actief voor " + token.login());
+				onStatus.accept(label + " actief voor " + token.login());
 			} else if (status == 401 && !retried) {
 				auth.refresh(clientId);
-				subscribe(gen, sessionId, true);
+				subscribe(gen, sessionId, type, label, true);
 			} else if (status == 403) {
-				onStatus.accept("Kanaalpunten niet beschikbaar: alleen voor Affiliates/Partners, en log in met het account van het kanaal. " + response.body());
-				stop();
+				onStatus.accept(label + " niet beschikbaar: alleen voor Affiliates/Partners, en log in met het account van het kanaal. " + response.body());
 			} else {
-				onStatus.accept("Kanaalpunten aanmelden mislukt (" + status + "): " + response.body());
+				onStatus.accept(label + " aanmelden mislukt (" + status + "): " + response.body());
 			}
 		} catch (Exception e) {
-			onStatus.accept("Kanaalpunten aanmelden mislukt: " + e.getMessage());
+			onStatus.accept(label + " aanmelden mislukt: " + e.getMessage());
 			if (auth.token() == null) {
 				stop();
 			}
@@ -214,7 +244,7 @@ public final class EventSubClient {
 					}
 					if (subscribeOnWelcome) {
 						String sessionId = session.get("id").getAsString();
-						Scheduler.INSTANCE.execute(() -> subscribe(gen, sessionId, false));
+						Scheduler.INSTANCE.execute(() -> subscribeAll(gen, sessionId));
 					}
 				}
 				case "session_reconnect" -> {
@@ -222,14 +252,27 @@ public final class EventSubClient {
 					open(gen, url, false);
 				}
 				case "notification" -> {
+					JsonObject metadata = message.getAsJsonObject("metadata");
+					if (metadata.has("message_id") && !seenMessages.add(metadata.get("message_id").getAsString())) {
+						return;
+					}
+					String subscription = payload.getAsJsonObject("subscription").get("type").getAsString();
 					JsonObject event = payload.getAsJsonObject("event");
-					String input = event.has("user_input") && !event.get("user_input").isJsonNull() ? event.get("user_input").getAsString() : "";
-					onRedemption.accept(new Redemption(
-							event.get("user_name").getAsString(),
-							event.getAsJsonObject("reward").get("title").getAsString(),
-							input));
+					if (subscription.equals(TYPE_BITS)) {
+						onBits.accept(new BitsUse(
+								event.get("user_id").getAsString(),
+								event.get("user_name").getAsString(),
+								event.get("bits").getAsInt(),
+								event.get("type").getAsString()));
+					} else if (subscription.equals(TYPE_REDEMPTION)) {
+						String input = event.has("user_input") && !event.get("user_input").isJsonNull() ? event.get("user_input").getAsString() : "";
+						onRedemption.accept(new Redemption(
+								event.get("user_name").getAsString(),
+								event.getAsJsonObject("reward").get("title").getAsString(),
+								input));
+					}
 				}
-				case "revocation" -> onStatus.accept("Twitch heeft de kanaalpunten-koppeling ingetrokken. Log opnieuw in met /twitchplays login.");
+				case "revocation" -> onStatus.accept("Twitch heeft een koppeling (kanaalpunten of bits) ingetrokken. Log opnieuw in met /twitchplays login.");
 				default -> {
 				}
 			}

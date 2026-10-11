@@ -272,6 +272,58 @@ public class TwitchPlaysClientGameTest implements FabricClientGameTest {
 			ctx.waitFor(mc -> TwitchPlaysClient.get().alerts.queued() == 0, 200);
 			ctx.waitTicks(30);
 			ctx.takeScreenshot("twitchplays-alert-donation");
+
+			// Takeover: one cheer of 1000+ bits gives exclusive control.
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().setMode(false));
+			chat(ctx, "klein", "Cheer999", 999);
+			check(ctx.computeOnClient(mc -> !TwitchPlaysClient.get().takeover.active()), "999 bits is not enough for a takeover");
+			chat(ctx, "baas", "Cheer1000 overname!", 1000);
+			check(ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.controls("baas")), "1000 bits should give control");
+			long tenMinutes = ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.current().remainingMs());
+			check(tenMinutes > 9.9 * 60_000 && tenMinutes <= 10 * 60_000, "1000 bits = 10 minutes, got " + tenMinutes);
+
+			Vec3 beforeOthers = ctx.computeOnClient(mc -> mc.player.position());
+			chat(ctx, "ander", "!back 2", 0);
+			ctx.waitTicks(25);
+			check(ctx.computeOnClient(mc -> mc.player.position().distanceTo(beforeOthers)) < 0.1, "during a takeover others can't move the player");
+			check(!feedTop(ctx).contains("ander"), "commands of others must not run during a takeover: " + feedTop(ctx));
+			chat(ctx, "baas", "!back 1", 0);
+			chat(ctx, "baas", "!unequip", 0);
+			ctx.waitTicks(25);
+			check(ctx.computeOnClient(mc -> mc.player.position().distanceTo(beforeOthers)) > 0.5, "the viewer who took over can move the player");
+			check(feedTop(ctx).startsWith("!unequip") && feedTop(ctx).contains("baas [overname]"), "paid commands are free during a takeover: " + feedTop(ctx));
+
+			// Others who cheer enough wait in line; the same viewer cheering again gets more time (max 30 minutes).
+			chat(ctx, "tweede", "Cheer2000", 2000);
+			chat(ctx, "baas", "Cheer1000", 1000);
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().onBitsUsed(new EventSubClient.BitsUse("pu", "PowerUpper", 1500, "power_up")));
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().onBitsUsed(new EventSubClient.BitsUse("dubbel", "Dubbel", 5000, "cheer")));
+			check(ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.waiting()) == 2, "the second cheerer and the Power-up wait; a cheer via EventSub is not counted twice");
+			long twentyMinutes = ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.current().remainingMs());
+			check(twentyMinutes > 19.9 * 60_000, "cheering again adds 10 minutes, got " + twentyMinutes);
+			// The 999 bits alert comes first; wait for the takeover title.
+			ctx.waitFor(mc -> TwitchPlaysClient.get().alerts.queued() == 0, 300);
+			ctx.waitTicks(30);
+			ctx.takeScreenshot("twitchplays-takeover");
+
+			// The clock stops while control is off.
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().setEnabled(false));
+			long pausedAt = ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.current().remainingMs());
+			ctx.waitTicks(30);
+			check(ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.current().remainingMs()) == pausedAt, "the takeover clock must wait while control is off");
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().setEnabled(true));
+
+			// A timeout ends the turn, a moderator can stop the next one, then everyone plays again.
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().onUserRemoved("baas"));
+			check(ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.controls("tweede")), "after a timeout the next in line gets control");
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().onChat(new ChatMessage("77", "mod", "Mod", "!takeover stop", 0, true, false)));
+			check(ctx.computeOnClient(mc -> TwitchPlaysClient.get().takeover.controls("pu")), "!takeover stop by a moderator goes to the next in line");
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().stopTakeover());
+			check(ctx.computeOnClient(mc -> !TwitchPlaysClient.get().takeover.active()), "the queue should be empty now");
+			// Terrain at this point of the test can block walking, so check that the command ran.
+			chat(ctx, "ander2", "!forward 1", 0);
+			ctx.waitTicks(3);
+			check(feedTop(ctx).equals("!forward  ander2"), "after the takeover everyone can play again: " + feedTop(ctx));
 		}
 	}
 

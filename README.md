@@ -15,7 +15,7 @@ Je hebt nodig: Minecraft Java Edition **26.3** op Windows, de officiële Minecra
 
 1. **Fabric Loader**: download de installer van https://fabricmc.net/use/installer/, kies *Client*, Minecraft-versie **26.3** en Loader **0.19.5** (of nieuwer), en klik *Install*. In de launcher verschijnt een profiel "fabric-loader-26.3".
 2. **Fabric API** voor 26.3 (bijv. `fabric-api-0.162.0+26.3.jar`), van https://modrinth.com/mod/fabric-api.
-3. **Twitch Plays**: `twitchplays-1.0.0.jar` uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases.
+3. **Twitch Plays**: de jar (bijv. `twitchplays-1.1.0.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
 
 Zet de jars van stap 2 en 3 in de map `mods` van je Minecraft-map (standaard `%APPDATA%\.minecraft\mods`) en start het Fabric-profiel.
 
@@ -73,7 +73,7 @@ Het getal is optioneel. Zonder getal geldt de standaardwaarde.
 | `!unequip` | `!armor` `!uitkleden` | armor uittrekken | **betaald** |
 | `!stop` | | alles loslaten | |
 
-Moderators en jijzelf kunnen in chat `!anarchie` of `!democratie` typen.
+Moderators en jijzelf kunnen in chat `!anarchie` of `!democratie` typen, en een overname beëindigen met `!takeover stop`.
 
 ### Windrichting en precies lopen (bijv. bomen hakken)
 
@@ -120,6 +120,15 @@ Chat mag de Engelse naam typen (`!pak diamond pickaxe`, `!pak bread`) of de naam
 
 Met `!inv` gaat je inventory 3 seconden open, zodat kijkers kunnen zien wat je bij je hebt. Daarna sluit het vanzelf. Commando's die chat in die 3 seconden stuurt, worden overgeslagen; in de overlay staat dan "menu open".
 
+### Handleidingen voor Discord
+
+Er zijn twee kant-en-klare afbeeldingen die je in Discord kunt zetten:
+
+- [Kijkershandleiding](docs/kijkers-handleiding.png): alle commando's voor kijkers, bits, kanaalpunten en de overname.
+- [Mod-handleiding](docs/mod-handleiding.png): de commando's voor moderators, en wat ze doen bij trollen of chaos.
+
+De prijzen en beloningen op de kijkershandleiding zijn de standaardwaarden. Pas je die aan in de config, bewerk dan `docs/kijkers-handleiding.html` en maak er een nieuwe afbeelding van.
+
 ### Tekst voor je Twitch-panel
 
 > **Bestuur mijn Minecraft!** Typ in chat: `!forward 3`, `!back`, `!left`, `!right`, `!jump`, `!jumpforward`, `!sprintjump`, `!pillar 3`, `!bridge 5`, `!noord`/`!oost`/`!zuid`/`!west`, `!stap 3`, `!lookleft 90`, `!lookup`, `!mine 3`, `!attack`, `!use`, `!eat`, `!1`–`!9`, `!pak <item>` (bijv. `!pak houweel`), `!inv`, `!drop`, `!swap`. In democratie-modus stem je: elke 5 seconden wint het populairste commando. Cheer bits met een commando (bijv. `Cheer300 !unequip`) en het gebeurt meteen!
@@ -135,6 +144,27 @@ Een cheer met een commando erin wordt meteen uitgevoerd, ook in democratie en zo
 
 Is de cheer te laag, dan telt het commando als gewoon chatbericht. Betaalde commando's worden dan genegeerd.
 
+## Overname: 1000 bits = jij bestuurt alleen
+
+Een kijker die in **één cheer** minstens 1000 bits geeft, krijgt een tijdje alleen de controle.
+
+- **Tijd:** 1 minuut per 100 bits, dus 1000 bits = 10 minuten, 2000 = 20 minuten. Een overname duurt maximaal 30 minuten.
+- **Alleen die kijker:** zolang de overname loopt, voert de mod alleen de commando's van die kijker uit. Zonder cooldown, zonder stemronde, en ook de betaalde commando's (`!shuffle`, `!unequip`, `!dropstack`) zijn gratis.
+- **Anderen:** cheers met een commando en kanaalpunt-beloningen van andere kijkers werken gewoon. Losse chatcommando's van anderen tellen even niet.
+- **Wachtrij:** cheert iemand anders 1000+ bits terwijl er al een overname loopt, dan komt die kijker in de wachtrij en is daarna aan de beurt.
+- **Verlengen:** cheert dezelfde kijker nog eens, dan komt de tijd erbij, tot maximaal 30 minuten.
+- **Eerlijke klok:** de tijd loopt alleen als er gespeeld wordt. Staat de besturing uit (F8), staat er een menu open of is het spel gepauzeerd, dan staat de klok stil.
+- **Na een herstart:** crasht Minecraft of herstart je het, dan loopt de overname daarna verder met de resterende tijd.
+- **Ingrijpen:** moderators en jij typen `!takeover stop` (of `!overname stop`) om de huidige overname te beëindigen; de volgende in de wachtrij is dan aan de beurt. Krijgt de kijker een timeout of ban, dan stopt zijn overname vanzelf. F8 blijft de noodrem.
+- **Te zien:** bij de start verschijnt "OVERNAME!" groot in beeld met vuurwerk. In de overlay staan de naam, een aftelklok en de wachtrij.
+
+Met de Twitch-login (zie hieronder) komen er twee dingen bij:
+
+- **Power-ups tellen mee.** Bits voor Power-ups (zoals een reuze-emote of een berichteffect) komen niet als cheer in de chat. Met de login ziet de mod ze toch, en telt een Power-up van 1000+ bits ook als overname. **Combos tellen niet mee**: Twitch geeft die niet door aan de mod.
+- **Bevestiging in je Twitch-chat.** De mod zet vanaf jouw account een bericht in de chat, bijvoorbeeld "👑 @Naam heeft nu 10 minuten alleen de controle over Minecraft!". Dat gebeurt ook bij een plek in de wachtrij, bij extra tijd en aan het eind.
+
+Uitproberen zonder bits: `/twitchplays takeover test` (1000 bits) of `/twitchplays takeover test 2500`. Stoppen: `/twitchplays takeover stop`.
+
 ## Kanaalpunten instellen (eenmalig)
 
 Hiervoor moet je Affiliate of Partner zijn. Twitch vraagt dat je een eigen "app" registreert. Dat is gratis en kost 2 minuten.
@@ -148,7 +178,13 @@ Hiervoor moet je Affiliate of Partner zijn. Twitch vraagt dat je een eigen "app"
 3. Klik **Create**, open de app en kopieer de **Client ID**.
 4. Typ in Minecraft: `/twitchplays clientid <jouw client id>`
 5. Typ `/twitchplays login`. In de chat verschijnt een link en een code; de code staat ook al op je klembord. Open de link, log in met het account van je kanaal en keur goed.
-6. Je ziet "Kanaalpunten actief". De login wordt onthouden.
+   Twitch vraagt toestemming voor drie dingen:
+   - kanaalpunt-inwisselingen lezen;
+   - bits lezen, zodat Power-ups meetellen voor een overname;
+   - berichten in je chat zetten, voor de bevestiging van een overname.
+6. Je ziet "Kanaalpunten actief" en "Bits van Power-ups actief". De login wordt onthouden.
+
+Had je al ingelogd met versie 1.0.0? Log dan nog één keer opnieuw in met `/twitchplays login`, zodat de mod ook de twee nieuwe toestemmingen krijgt.
 
 ### Beloningen koppelen aan commando's
 
@@ -252,7 +288,9 @@ Met `/twitchplays alert <soort>` zie je hoe een melding eruitziet. De soorten zi
 | `/twitchplays clientid <id>`, `login`, `logout` | Kanaalpunten-login |
 | `/twitchplays streamelements` / `streamelements off` | StreamElements koppelen (token van klembord) / ontkoppelen |
 | `/twitchplays alerts on` / `off` | Alle meldingen aan/uit |
-| `/twitchplays alert <soort>` | Voorbeeldmelding tonen |
+| `/twitchplays alert <soort>` | Voorbeeldmelding tonen (ook `takeover`) |
+| `/twitchplays takeover stop` | Huidige overname beëindigen |
+| `/twitchplays takeover test [bits]` | Doen alsof een kijker 1000 (of meer) bits cheert |
 | `/twitchplays reload` | Config opnieuw inlezen na handmatig aanpassen |
 
 ## Config
@@ -275,6 +313,12 @@ Het bestand is `config\twitchplays.json` in je Minecraft-map (standaard `%APPDAT
 | `alerts.subs`, `gifts`, `follows`, `donations`, `raids`, `bits` | `true` | Per soort aan/uit |
 | `alerts.bitsMinimum` | `100` | Kleinere cheers krijgen geen melding |
 | `alerts.title`, `sound`, `fireworks` | `true` | Titel, geluid en vuurwerk los aan/uit |
+| `alerts.takeover` | `true` | Melding "OVERNAME!" aan/uit |
+| `takeover.enabled` | `true` | Overname met bits aan/uit |
+| `takeover.minBits` | `1000` | Kleinste cheer die een overname geeft |
+| `takeover.bitsPerMinute` | `100` | Bits per minuut controle |
+| `takeover.maxMinutes` | `30` | Maximale duur, ook na verlengen |
+| `takeover.chatMessages` | `true` | Bevestiging in de Twitch-chat (vereist login) |
 
 ### Tokens en veiligheid
 

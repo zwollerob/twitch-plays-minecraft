@@ -10,23 +10,29 @@ import net.minecraft.network.chat.Style;
 import nl.zwollerob.twitchplays.command.Action;
 import nl.zwollerob.twitchplays.command.CommandParser;
 import nl.zwollerob.twitchplays.command.ParsedCommand;
+import nl.zwollerob.twitchplays.command.Takeover;
 import nl.zwollerob.twitchplays.command.VoteRound;
 import nl.zwollerob.twitchplays.game.AlertPlayer;
 import nl.zwollerob.twitchplays.game.Controller;
 import nl.zwollerob.twitchplays.twitch.Alert;
 import nl.zwollerob.twitchplays.twitch.ChatMessage;
+import nl.zwollerob.twitchplays.twitch.ChatSender;
 import nl.zwollerob.twitchplays.twitch.EventSubClient;
 import nl.zwollerob.twitchplays.twitch.IrcClient;
 import nl.zwollerob.twitchplays.twitch.StreamElementsClient;
 import nl.zwollerob.twitchplays.twitch.TwitchAuth;
+
+import com.google.gson.Gson;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -40,6 +46,7 @@ public final class TwitchPlays {
 	public static final int COLOR_ERROR = 0xFFFF6B6B;
 	public static final int COLOR_INFO = 0xFFAAAAAA;
 	public static final int COLOR_ALERT = 0xFF5CE65C;
+	public static final int COLOR_TAKEOVER = 0xFFFFB347;
 
 	/** One line in the overlay: what happened, in color, followed by who did it, in grey. */
 	public record FeedEntry(String what, String who, int color, long time) {
@@ -58,6 +65,11 @@ public final class TwitchPlays {
 	public final EventSubClient eventSub;
 	public final StreamElementsClient streamElements;
 	public final AlertPlayer alerts = new AlertPlayer();
+	public final ChatSender chatSender;
+	public final Takeover takeover = new Takeover(new TakeoverEvents());
+	private final Path takeoverPath;
+	private long lastTakeoverTick;
+	private long lastTakeoverSave;
 	private final Path streamElementsTokenPath;
 	/** Gift bombs arrive as one "N gifts" notice followed by N single gifts; those singles are folded into the first. */
 	private final Map<String, Integer> pendingGifts = new HashMap<>();
@@ -77,18 +89,23 @@ public final class TwitchPlays {
 		config = Config.load(configPath);
 		auth = new TwitchAuth(configDir.resolve("twitchplays-login.json"));
 		streamElementsTokenPath = configDir.resolve("twitchplays-streamelements.txt");
+		takeoverPath = configDir.resolve("twitchplays-takeover.json");
 		Minecraft mc = Minecraft.getInstance();
 		irc = new IrcClient(
 				message -> mc.execute(() -> onChat(message)),
 				alert -> mc.execute(() -> onAlert(alert)),
+				userId -> mc.execute(() -> onUserRemoved(userId)),
 				text -> mc.execute(() -> status(text)));
+		chatSender = new ChatSender(auth, () -> config.clientId, text -> mc.execute(() -> status(text)));
 		streamElements = new StreamElementsClient(
 				alert -> mc.execute(() -> onAlert(alert)),
 				text -> mc.execute(() -> status(text)));
 		eventSub = new EventSubClient(auth,
 				redemption -> mc.execute(() -> onRedemption(redemption)),
+				bits -> mc.execute(() -> onBitsUsed(bits)),
 				text -> mc.execute(() -> status(text)));
 		reloadParser();
+		loadTakeover();
 	}
 
 	public void start() {
@@ -142,16 +159,17 @@ public final class TwitchPlays {
 	// ---- incoming events ----
 
 	public void onChat(ChatMessage message) {
-		// Alerts also show while chat control is switched off.
-		if (message.bits() >= config.alerts.bitsMinimum) {
+		// A takeover cheer and alerts also count while chat control is switched off; the takeover clock waits.
+		boolean tookOver = message.bits() > 0 && offerTakeover(message.userId(), message.displayName(), message.bits());
+		if (!tookOver && message.bits() >= config.alerts.bitsMinimum) {
 			onAlert(Alert.of(Alert.Type.BITS, message.displayName(), "", message.bits()));
 		}
-		if (!config.enabled) {
+		String text = message.text().strip();
+		// Moderators can switch mode and stop a takeover also while the streamer has control off (F8).
+		if (message.moderator() && handleModCommand(text)) {
 			return;
 		}
-		String text = message.text().strip();
-
-		if (message.moderator() && config.modsCanSwitchMode && handleModCommand(text)) {
+		if (!config.enabled) {
 			return;
 		}
 
@@ -168,6 +186,13 @@ public final class TwitchPlays {
 		}
 
 		Optional<ParsedCommand> parsed = parser.parse(text);
+		if (takeover.active()) {
+			// Only the viewer who took over: no voting, no cooldown, paid commands included.
+			if (takeover.controls(message.userId()) && parsed.isPresent() && isAllowed(parsed.get())) {
+				run(parsed.get(), message.displayName() + " [overname]", COLOR_TAKEOVER);
+			}
+			return;
+		}
 		if (parsed.isEmpty() || !isAllowed(parsed.get()) || isPaidOnly(parsed.get())) {
 			return;
 		}
@@ -206,6 +231,132 @@ public final class TwitchPlays {
 			return;
 		}
 		run(parsed.get(), redemption.userName() + " [punten]", COLOR_POINTS);
+	}
+
+	/** Bits from EventSub. Cheers also arrive in chat and are handled there, so only Power-ups count here. */
+	public void onBitsUsed(EventSubClient.BitsUse bits) {
+		if (bits.type().equals("cheer")) {
+			return;
+		}
+		if (!offerTakeover(bits.userId(), bits.userName(), bits.bits()) && bits.bits() >= config.alerts.bitsMinimum) {
+			onAlert(Alert.of(Alert.Type.BITS, bits.userName(), "", bits.bits()));
+		}
+	}
+
+	/** Gives control (or a place in line) for a big enough single cheer. Returns whether it did. */
+	public boolean offerTakeover(String userId, String name, int bits) {
+		Config.TakeoverSettings settings = config.takeover;
+		if (!settings.enabled) {
+			return false;
+		}
+		long ms = Takeover.durationMs(bits, settings.minBits, settings.bitsPerMinute, settings.maxMinutes);
+		if (ms <= 0) {
+			return false;
+		}
+		takeover.add(userId, name, ms, settings.maxMinutes * 60_000L);
+		return true;
+	}
+
+	/** A timeout or ban in chat also ends that viewer's takeover. */
+	public void onUserRemoved(String userId) {
+		Takeover.Turn current = takeover.current();
+		String name = current != null && current.userId.equals(userId) ? current.name : "";
+		if (takeover.remove(userId)) {
+			feed("overname gestopt (timeout/ban)", name, COLOR_ERROR);
+			saveTakeover();
+		}
+	}
+
+	/** Reacts to takeover changes: alert, overlay line and a confirmation in Twitch chat. */
+	private final class TakeoverEvents implements Takeover.Listener {
+		@Override
+		public void started(Takeover.Turn turn) {
+			long minutes = Math.round(turn.remainingMs() / 60_000.0);
+			onAlert(Alert.of(Alert.Type.TAKEOVER, turn.name, minutes + " minuten", (int) minutes));
+			say("\uD83D\uDC51 @" + turn.name + " heeft nu " + minutes + " minuten alleen de controle over Minecraft! Andere commando's tellen even niet.");
+			saveTakeover();
+		}
+
+		@Override
+		public void queued(Takeover.Turn turn, int position) {
+			long minutes = Math.round(turn.remainingMs() / 60_000.0);
+			feed("wachtrij #" + position, turn.name, COLOR_TAKEOVER);
+			say("@" + turn.name + " staat in de wachtrij voor een overname (plek " + position + ", " + minutes + " minuten).");
+			saveTakeover();
+		}
+
+		@Override
+		public void extended(Takeover.Turn turn, long addedMs) {
+			long minutes = Math.round(addedMs / 60_000.0);
+			feed("overname +" + minutes + " min", turn.name, COLOR_TAKEOVER);
+			say("@" + turn.name + " krijgt er " + minutes + " minuten bij (nu " + clock(turn.remainingMs()) + ").");
+			saveTakeover();
+		}
+
+		@Override
+		public void ended(Takeover.Turn turn) {
+			feed("overname voorbij", turn.name, COLOR_TAKEOVER);
+			if (!takeover.active()) {
+				say("De overname van @" + turn.name + " is voorbij. Iedereen mag weer meedoen!");
+				round = new VoteRound();
+				roundEndsAt = System.currentTimeMillis() + config.voteSeconds * 1000L;
+			}
+			saveTakeover();
+		}
+	}
+
+	private void say(String message) {
+		if (config.takeover.chatMessages) {
+			chatSender.send(message);
+		}
+	}
+
+	/** Remaining time as m:ss. */
+	public static String clock(long ms) {
+		long seconds = Math.max(0, (ms + 999) / 1000);
+		return seconds / 60 + ":" + String.format(Locale.ROOT, "%02d", seconds % 60);
+	}
+
+	/** Whether the takeover clock runs: control on, in game, no menu, not paused. */
+	public boolean takeoverRunning(Minecraft mc) {
+		return config.enabled && Controller.canControl(mc);
+	}
+
+	private void tickTakeover(Minecraft mc) {
+		long now = System.currentTimeMillis();
+		long elapsed = lastTakeoverTick == 0 ? 0 : now - lastTakeoverTick;
+		lastTakeoverTick = now;
+		takeover.tick(elapsed, takeoverRunning(mc));
+		// Save now and then, so a crash or restart loses at most a few seconds of paid time.
+		if (takeover.active() && now - lastTakeoverSave > 10_000) {
+			saveTakeover();
+		}
+	}
+
+	private record SavedTurn(String userId, String name, long remainingMs) {
+	}
+
+	public void saveTakeover() {
+		lastTakeoverSave = System.currentTimeMillis();
+		try {
+			List<SavedTurn> turns = takeover.turns().stream().map(t -> new SavedTurn(t.userId, t.name, t.remainingMs())).toList();
+			Files.writeString(takeoverPath, new Gson().toJson(turns));
+		} catch (IOException e) {
+			TwitchPlaysClient.LOGGER.warn("Could not save {}", takeoverPath, e);
+		}
+	}
+
+	private void loadTakeover() {
+		try {
+			if (Files.exists(takeoverPath)) {
+				SavedTurn[] saved = new Gson().fromJson(Files.readString(takeoverPath), SavedTurn[].class);
+				if (saved != null) {
+					takeover.restore(Arrays.stream(saved).map(t -> new Takeover.Turn(t.userId(), t.name(), t.remainingMs())).toList());
+				}
+			}
+		} catch (Exception e) {
+			TwitchPlaysClient.LOGGER.warn("Could not read {}", takeoverPath, e);
+		}
 	}
 
 	public void onAlert(Alert alert) {
@@ -255,6 +406,7 @@ public final class TwitchPlays {
 			case DONATION -> "donatie " + alert.detail();
 			case RAID -> "raid met " + alert.amount() + " kijkers";
 			case BITS -> alert.amount() + " bits";
+			case TAKEOVER -> "overname " + alert.detail();
 		};
 	}
 
@@ -272,14 +424,34 @@ public final class TwitchPlays {
 			}
 			word = word.substring(parser.prefix().length());
 		}
-		switch (word.strip()) {
-			case "anarchy", "anarchie" -> setMode(false);
-			case "democracy", "democratie" -> setMode(true);
+		switch (word.strip().replaceAll("\\s+", " ")) {
+			case "anarchy", "anarchie" -> {
+				if (!config.modsCanSwitchMode) {
+					return false;
+				}
+				setMode(false);
+			}
+			case "democracy", "democratie" -> {
+				if (!config.modsCanSwitchMode) {
+					return false;
+				}
+				setMode(true);
+			}
+			// Moderators can always end a takeover, e.g. when someone is trolling.
+			case "takeover stop", "overname stop" -> stopTakeover();
 			default -> {
 				return false;
 			}
 		}
 		return true;
+	}
+
+	/** Ends the current takeover; the next viewer in line (if any) starts. */
+	public void stopTakeover() {
+		Takeover.Turn stopped = takeover.stop();
+		if (stopped == null) {
+			feed("geen overname bezig", "", COLOR_INFO);
+		}
 	}
 
 	/** A cheer looks like "Cheer100 !jump": the command starts at the prefix, cheermotes are dropped. */
@@ -318,7 +490,8 @@ public final class TwitchPlays {
 		}
 		controller.tick(mc);
 		alerts.tick(mc, config.alerts);
-		if (!config.democracy() || !config.enabled) {
+		tickTakeover(mc);
+		if (!config.democracy() || !config.enabled || takeover.active()) {
 			return;
 		}
 		long now = System.currentTimeMillis();

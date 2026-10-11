@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>Twitch Plays Minecraft - moderators</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1214;
+    --panel: #142024;
+    --panel-2: #1a2a2f;
+    --line: #27404a;
+    --text: #e8f3f1;
+    --muted: #93aeb0;
+    --mod: #00ad03;
+    --mod-soft: #5ce65c;
+    --purple-soft: #bf94ff;
+    --gold: #ffd166;
+    --cyan: #7fd4ff;
+    --orange: #ff9f43;
+    --red: #ff6b6b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body {
+    width: 1400px;
+    font-family: "Inter", system-ui, sans-serif;
+    color: var(--text);
+    padding: 44px 44px 36px;
+    background:
+      radial-gradient(ellipse 900px 420px at 12% -5%, rgba(0, 173, 3, 0.28), transparent 70%),
+      radial-gradient(ellipse 700px 380px at 100% 0%, rgba(145, 70, 255, 0.16), transparent 70%),
+      var(--bg);
+  }
+
+  header { display: flex; align-items: center; gap: 28px; margin-bottom: 26px; }
+  .badge {
+    width: 96px; height: 96px; flex: none; border-radius: 14px;
+    display: grid; place-items: center;
+    background: var(--mod); border: 4px solid #000;
+    box-shadow: 0 0 0 4px var(--mod-soft), 0 10px 30px rgba(0, 173, 3, 0.45);
+  }
+  .badge svg { width: 62px; height: 62px; }
+  h1 { font-family: "Silkscreen", monospace; font-weight: 700; font-size: 52px; line-height: 1; letter-spacing: 1px; }
+  h1 .mod { color: var(--mod-soft); }
+  .subtitle { margin-top: 10px; font-size: 22px; color: var(--muted); font-weight: 500; }
+  .subtitle b { color: var(--text); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  .card { background: var(--panel); border: 2px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .card > h2 {
+    display: flex; align-items: center; gap: 12px;
+    font-family: "Silkscreen", monospace; font-weight: 700; font-size: 22px; letter-spacing: .5px;
+    padding: 12px 18px; background: var(--panel-2); border-bottom: 2px solid var(--line);
+  }
+  .card > h2 .dot { width: 14px; height: 14px; flex: none; box-shadow: 0 0 12px currentColor; background: currentColor; }
+  .wide { grid-column: 1 / -1; }
+
+  .cmdrow { display: grid; grid-template-columns: 300px 1fr; gap: 18px; padding: 14px 18px; border-bottom: 1px solid rgba(39, 64, 74, 0.8); align-items: start; }
+  .cmdrow:last-child { border-bottom: none; }
+  .cmd { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 21px; color: #fff; }
+  .alias { display: block; margin-top: 3px; font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 13.5px; color: var(--muted); }
+  .what { font-size: 16px; line-height: 1.45; color: #d5e4e2; }
+  .what b { color: var(--text); }
+  .what .when { display: block; margin-top: 6px; font-size: 14.5px; color: var(--muted); }
+  .note {
+    margin: 0 18px 16px; padding: 10px 14px; border-radius: 10px; font-size: 14.5px; line-height: 1.45;
+    background: rgba(255, 107, 107, 0.1); border: 1px solid rgba(255, 107, 107, 0.35); color: #f4d2d2;
+  }
+  .note b { color: #fff; }
+  code { font-family: "JetBrains Mono", monospace; font-weight: 700; color: #fff; font-size: 14.5px; }
+
+  .c-mode { color: var(--cyan); }
+  .c-take { color: var(--gold); }
+  .c-help { color: var(--mod-soft); }
+  .c-streamer { color: var(--purple-soft); }
+
+  .scenarios { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .scenario { padding: 16px 18px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .scenario:nth-child(3n) { border-right: none; }
+  .scenario:nth-last-child(-n+3) { border-bottom: none; }
+  .scenario h4 { font-size: 16.5px; font-weight: 800; margin-bottom: 8px; }
+  .scenario p { font-size: 15px; line-height: 1.45; color: #d5e4e2; }
+  .scenario .do { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; font-size: 13.5px; font-weight: 800;
+    background: rgba(92, 230, 92, 0.14); color: var(--mod-soft); border: 1px solid rgba(92, 230, 92, 0.35); }
+  .scenario .do.ask { background: rgba(191, 148, 255, 0.14); color: var(--purple-soft); border-color: rgba(191, 148, 255, 0.35); }
+
+  .streamer-body { display: grid; grid-template-columns: 0.85fr 1.15fr; }
+  .streamer-col:first-child .srow { grid-template-columns: 230px 1fr; }
+  .srow { display: grid; grid-template-columns: 330px 1fr; gap: 14px; padding: 11px 18px; border-bottom: 1px solid rgba(39, 64, 74, 0.8); align-items: center; }
+  .srow .key { font-family: "JetBrains Mono", monospace; font-weight: 700; font-size: 16px; color: #fff; }
+  .srow .key kbd { display: inline-block; min-width: 34px; text-align: center; padding: 3px 8px; border-radius: 6px; background: #22363c; border: 1px solid #3b5a64; border-bottom-width: 3px; }
+  .srow .what { font-size: 15px; }
+  .streamer-col:first-child { border-right: 1px solid var(--line); }
+  .streamer-col .srow:last-child { border-bottom: none; }
+
+  footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; }
+  footer b { color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="#fff"><path d="M21 3v3.2l-9.6 9.6 1.5 1.5-1.4 1.4-2.1-2.1-3.1 3.1.7.7-1.4 1.4-3.5-3.5 1.4-1.4.7.7 3.1-3.1-2.1-2.1 1.4-1.4 1.5 1.5L17.8 3H21z"/></svg>
+  </div>
+  <div>
+    <h1><span class="mod">Mod</span>-handleiding</h1>
+    <p class="subtitle">Twitch Plays Minecraft: zo houd je de chaos in de hand. Typ deze commando's <b>in de Twitch-chat</b>.</p>
+  </div>
+</header>
+
+<div class="grid">
+
+  <section class="card">
+    <h2 class="c-mode"><span class="dot"></span><span>Modus wisselen</span></h2>
+    <div class="cmdrow">
+      <div><span class="cmd">!democratie</span><span class="alias">!democracy</span></div>
+      <div class="what"><b>Stemmen:</b> elke 5 seconden wint het commando met de meeste stemmen. Eén stem per kijker per ronde.
+        <span class="when">Gebruik bij te veel chaos of als een paar kijkers alles verpesten.</span></div>
+    </div>
+    <div class="cmdrow">
+      <div><span class="cmd">!anarchie</span><span class="alias">!anarchy</span></div>
+      <div class="what"><b>Alles telt:</b> elk commando wordt meteen uitgevoerd, met een korte wachttijd per kijker.
+        <span class="when">Terug naar de gezellige chaos als het weer rustig is.</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2 class="c-take"><span class="dot"></span><span>Overname stoppen</span></h2>
+    <div class="cmdrow">
+      <div><span class="cmd">!takeover stop</span><span class="alias">!overname stop</span></div>
+      <div class="what">Stopt de huidige <b>overname</b> (iemand die met 1000+ bits alleen de controle heeft). Staat er iemand in de wachtrij, dan is die meteen aan de beurt.
+        <span class="when">Nog iemand in de wachtrij die niet aan de beurt mag komen? Typ het nog een keer.</span></div>
+    </div>
+    <div class="note"><b>Let op:</b> de kijker krijgt zijn bits niet terug. Stop een overname alleen bij echt trollen of misbruik.</div>
+  </section>
+
+  <section class="card wide">
+    <h2 class="c-help"><span class="dot"></span><span>Wat doe je als...</span></h2>
+    <div class="scenarios">
+      <div class="scenario">
+        <h4>...één kijker blijft trollen?</h4>
+        <p>Geef een <b>timeout</b>. Wie geen berichten kan sturen, kan ook niets meer besturen.</p>
+        <span class="do">/timeout naam</span>
+      </div>
+      <div class="scenario">
+        <h4>...de overnemer trolt?</h4>
+        <p>Een <b>timeout of ban</b> stopt de overname automatisch. Alleen de overname stoppen kan ook.</p>
+        <span class="do">!takeover stop</span>
+      </div>
+      <div class="scenario">
+        <h4>...de chat is één grote chaos?</h4>
+        <p>Zet de stream op <b>stemmen</b>. Dan gebeurt er elke 5 seconden één ding: wat de meesten willen.</p>
+        <span class="do">!democratie</span>
+      </div>
+      <div class="scenario">
+        <h4>...de streamer moet even zelf spelen?</h4>
+        <p>Bijvoorbeeld bij gevaar, een menu of een pauze. Alleen de streamer kan de besturing uitzetten.</p>
+        <span class="do ask">Vraag: druk op F8</span>
+      </div>
+      <div class="scenario">
+        <h4>...commando's lijken niets te doen?</h4>
+        <p>Kijk linksboven in beeld: daar staat de modus, een lopende overname, of "UIT" / "gepauzeerd".</p>
+        <span class="do ask">Vraag: /twitchplays status</span>
+      </div>
+      <div class="scenario">
+        <h4>...meldingen storen even?</h4>
+        <p>Bijvoorbeeld tijdens een spannend moment. De streamer kan de pop-ups met vuurwerk tijdelijk uitzetten.</p>
+        <span class="do ask">Vraag: /twitchplays alerts off</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card wide">
+    <h2 class="c-streamer"><span class="dot"></span><span>Alleen de streamer (in Minecraft)</span></h2>
+    <div class="streamer-body">
+      <div class="streamer-col">
+        <div class="srow"><span class="key"><kbd>F8</kbd></span><span class="what"><b>Noodrem:</b> chat-besturing aan of uit. Een lopende overname staat dan op pauze.</span></div>
+        <div class="srow"><span class="key"><kbd>F9</kbd></span><span class="what">Wisselen tussen anarchie en democratie.</span></div>
+        <div class="srow"><span class="key">/twitchplays status</span><span class="what">Kanaal, modus, logins en meldingen in één overzicht.</span></div>
+      </div>
+      <div class="streamer-col">
+        <div class="srow"><span class="key">/twitchplays takeover stop</span><span class="what">Overname stoppen, net als <code>!takeover stop</code>.</span></div>
+        <div class="srow"><span class="key">/twitchplays alerts off|on</span><span class="what">Pop-ups met vuurwerk uit of weer aan.</span></div>
+        <div class="srow"><span class="key">/twitchplays off|on</span><span class="what">Besturing uit of aan, net als F8.</span></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <span>Mods kunnen ook alle <b>kijkerscommando's</b> gebruiken: zie de kijkershandleiding.</span>
+  <span>Twitch Plays Minecraft</span>
+</footer>
+
+<script>
+  // Used when rendering: the page height, once the fonts have loaded.
+  document.fonts.ready.then(() => document.body.setAttribute("data-height", Math.ceil(document.documentElement.scrollHeight)));
+</script>
+</body>
+</html>
