@@ -15,7 +15,7 @@ Je hebt nodig: Minecraft Java Edition **26.3** op Windows, de officiële Minecra
 
 1. **Fabric Loader**: download de installer van https://fabricmc.net/use/installer/, kies *Client*, Minecraft-versie **26.3** en Loader **0.19.5** (of nieuwer), en klik *Install*. In de launcher verschijnt een profiel "fabric-loader-26.3".
 2. **Fabric API** voor 26.3 (bijv. `fabric-api-0.162.0+26.3.jar`), van https://modrinth.com/mod/fabric-api.
-3. **Twitch Plays**: de jar (bijv. `twitchplays-1.1.0.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
+3. **Twitch Plays**: de jar (bijv. `twitchplays-1.1.1.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
 
 Zet de jars van stap 2 en 3 in de map `mods` van je Minecraft-map (standaard `%APPDATA%\.minecraft\mods`) en start het Fabric-profiel.
 

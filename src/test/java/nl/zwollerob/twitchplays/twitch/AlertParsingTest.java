@@ -71,6 +71,27 @@ class AlertParsingTest {
 	}
 
 	@Test
+	void sharedChatModeratorsOfOtherChannelsHaveNoPower() {
+		ChatMessage own = ChatMessage.parse("@badges=moderator/1;mod=1;room-id=1;user-id=5 :m!m@m.tmi.twitch.tv PRIVMSG #c :!democratie");
+		ChatMessage other = ChatMessage.parse("@badges=moderator/1;mod=1;room-id=1;source-room-id=2;user-id=6 :m!m@m.tmi.twitch.tv PRIVMSG #c :!democratie");
+		ChatMessage otherStreamer = ChatMessage.parse("@badges=broadcaster/1;room-id=1;source-room-id=2;user-id=7 :s!s@s.tmi.twitch.tv PRIVMSG #c :!takeover stop");
+		assertTrue(own.moderator());
+		assertFalse(other.moderator());
+		assertFalse(otherStreamer.moderator());
+		assertFalse(otherStreamer.broadcaster());
+	}
+
+	@Test
+	void eventSubOnlyReconnectsToTwitch() {
+		assertTrue(EventSubClient.isTwitchSocket("wss://eventsub.wss.twitch.tv/ws?id=abc"));
+		assertFalse(EventSubClient.isTwitchSocket("ws://eventsub.wss.twitch.tv/ws"), "no unencrypted connection");
+		assertFalse(EventSubClient.isTwitchSocket("wss://evil.example/ws"));
+		assertFalse(EventSubClient.isTwitchSocket("wss://twitch.tv.evil.example/ws"));
+		assertFalse(EventSubClient.isTwitchSocket("wss://eviltwitch.tv/ws"));
+		assertFalse(EventSubClient.isTwitchSocket("not a url"));
+	}
+
+	@Test
 	void sharedChatBitsDoNotCount() {
 		ChatMessage own = ChatMessage.parse("@bits=100;room-id=1;user-id=5 :a!a@a.tmi.twitch.tv PRIVMSG #c :Cheer100");
 		ChatMessage other = ChatMessage.parse("@bits=100;room-id=1;source-room-id=2;user-id=5 :a!a@a.tmi.twitch.tv PRIVMSG #c :Cheer100");

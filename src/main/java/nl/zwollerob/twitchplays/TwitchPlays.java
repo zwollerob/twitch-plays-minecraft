@@ -253,7 +253,7 @@ public final class TwitchPlays {
 		if (ms <= 0) {
 			return false;
 		}
-		takeover.add(userId, name, ms, settings.maxMinutes * 60_000L);
+		takeover.add(userId, clean(name), ms, settings.maxMinutes * 60_000L);
 		return true;
 	}
 
@@ -311,6 +311,30 @@ public final class TwitchPlays {
 		}
 	}
 
+	/**
+	 * Makes text from viewers safe to show: removes control characters, Minecraft's § formatting
+	 * codes (obfuscated or invisible text) and invisible Unicode that flips or hides text.
+	 */
+	public static String clean(String text) {
+		if (text == null) {
+			return "";
+		}
+		StringBuilder out = new StringBuilder(text.length());
+		text.codePoints().forEach(c -> {
+			boolean control = c < 0x20 || (c >= 0x7F && c < 0xA0);
+			boolean formatting = c == '\u00A7';
+			boolean invisible = (c >= 0x200B && c <= 0x200F) || (c >= 0x202A && c <= 0x202E) || (c >= 0x2060 && c <= 0x206F) || c == 0xFEFF;
+			if (!control && !formatting && !invisible) {
+				out.appendCodePoint(c);
+			}
+		});
+		return out.toString();
+	}
+
+	private static Alert cleaned(Alert alert) {
+		return new Alert(alert.type(), clean(alert.user()), clean(alert.detail()), alert.amount(), alert.gifter());
+	}
+
 	/** Remaining time as m:ss. */
 	public static String clock(long ms) {
 		long seconds = Math.max(0, (ms + 999) / 1000);
@@ -360,6 +384,7 @@ public final class TwitchPlays {
 	}
 
 	public void onAlert(Alert alert) {
+		alert = cleaned(alert);
 		long now = System.currentTimeMillis();
 		pendingGiftsSince.entrySet().removeIf(e -> {
 			boolean expired = now - e.getValue() > 60_000;
@@ -392,6 +417,7 @@ public final class TwitchPlays {
 
 	/** For /twitchplays alert: always shows, whatever the alert settings are. */
 	public void testAlert(Alert alert) {
+		alert = cleaned(alert);
 		alerts.add(alert);
 		feed(describe(alert), alert.user(), COLOR_ALERT);
 	}
@@ -561,7 +587,7 @@ public final class TwitchPlays {
 	}
 
 	public void feed(String what, String who, int color) {
-		feed.addFirst(new FeedEntry(what, who, color, System.currentTimeMillis()));
+		feed.addFirst(new FeedEntry(clean(what), clean(who), color, System.currentTimeMillis()));
 		while (feed.size() > FEED_SIZE) {
 			feed.removeLast();
 		}

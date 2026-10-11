@@ -65,8 +65,15 @@ public class TwitchPlaysClient implements ClientModInitializer {
 		});
 
 		ClientTickEvents.START_CLIENT_TICK.register(client -> {
-			if (twitch != null) {
+			if (twitch == null) {
+				return;
+			}
+			try {
 				twitch.tick(client);
+			} catch (RuntimeException e) {
+				// An error here would otherwise crash the game mid-stream; let go of all keys and keep playing.
+				LOGGER.error("Twitch Plays tick failed", e);
+				twitch.controller.stopAll();
 			}
 		});
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

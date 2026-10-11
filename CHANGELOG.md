@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.1 (2026-10-11)
+
+### Veiligheid
+- Tekst van kijkers (namen, `!pak`-tekst, kanaalpunten-invoer) wordt opgeschoond voordat hij in beeld of in de chat komt: geen Minecraft-opmaakcodes (§), stuurtekens of onzichtbare Unicode meer.
+- In een gedeelde chat (shared chat) hebben de streamer en moderators van het andere kanaal geen moderatorrechten meer in jouw spel.
+- De kanaalpunten- en bitsverbinding volgt een herverbind-verzoek alleen nog naar een beveiligd adres van Twitch zelf.
+- Een onverwachte fout tijdens het spelen laat alle toetsen los en logt de fout, in plaats van het spel te laten crashen.
+- De lijst met al geziene StreamElements-meldingen is begrensd en thread-safe.
+- De Gradle-download wordt gecontroleerd met een vaste SHA-256.
+- Nieuwe fuzz-tests: 70.000 willekeurige en kwaadaardige chatberichten mogen nooit een fout of een onbekend commando opleveren.
+
 ## 1.1.0 (2026-10-11)
 
 ### Overname met bits

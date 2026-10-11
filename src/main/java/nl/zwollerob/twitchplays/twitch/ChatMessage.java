@@ -20,8 +20,10 @@ public record ChatMessage(String userId, String login, String displayName, Strin
 			text = text.substring(8, text.length() - 1);
 		}
 		String badges = irc.tag("badges");
-		boolean broadcaster = badges.contains("broadcaster/");
-		boolean moderator = broadcaster || "1".equals(irc.tag("mod")) || badges.contains("moderator/");
+		// In a shared chat, the broadcaster and moderators of the other channel have no say here.
+		boolean ownRoom = !irc.fromOtherRoom();
+		boolean broadcaster = ownRoom && badges.contains("broadcaster/");
+		boolean moderator = broadcaster || ownRoom && ("1".equals(irc.tag("mod")) || badges.contains("moderator/"));
 		String userId = irc.tag("user-id");
 		// Bits cheered in another channel of a shared chat were not paid to this streamer.
 		int bits = irc.fromOtherRoom() ? 0 : irc.intTag("bits");

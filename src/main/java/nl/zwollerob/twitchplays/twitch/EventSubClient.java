@@ -133,6 +133,16 @@ public final class EventSubClient {
 		}
 	}
 
+	static boolean isTwitchSocket(String url) {
+		try {
+			URI uri = URI.create(url);
+			String host = uri.getHost();
+			return "wss".equals(uri.getScheme()) && host != null && (host.equals("twitch.tv") || host.endsWith(".twitch.tv"));
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+	}
+
 	private void subscribeAll(int gen, String sessionId) {
 		TwitchAuth.Token token = auth.token();
 		if (token == null) {
@@ -249,7 +259,12 @@ public final class EventSubClient {
 				}
 				case "session_reconnect" -> {
 					String url = payload.getAsJsonObject("session").get("reconnect_url").getAsString();
-					open(gen, url, false);
+					// Only ever follow a reconnect to Twitch itself, over a secure connection.
+					if (isTwitchSocket(url)) {
+						open(gen, url, false);
+					} else {
+						reconnect(gen, "onverwacht reconnect-adres");
+					}
 				}
 				case "notification" -> {
 					JsonObject metadata = message.getAsJsonObject("metadata");

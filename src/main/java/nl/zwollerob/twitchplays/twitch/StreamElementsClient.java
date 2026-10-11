@@ -13,7 +13,9 @@ import java.text.NumberFormat;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Currency;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -32,7 +34,12 @@ public final class StreamElementsClient {
 	private final Consumer<Alert> onAlert;
 	private final Consumer<String> onStatus;
 	/** Astro can deliver an event again after a reconnect; only celebrate it once. */
-	private final Set<String> seen = new HashSet<>();
+	private final Set<String> seen = Collections.synchronizedSet(Collections.newSetFromMap(new LinkedHashMap<>() {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+			return size() > 2000;
+		}
+	}));
 
 	private volatile String token;
 	private volatile boolean connected;
