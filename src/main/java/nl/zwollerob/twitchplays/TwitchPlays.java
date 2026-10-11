@@ -104,6 +104,7 @@ public final class TwitchPlays {
 				redemption -> mc.execute(() -> onRedemption(redemption)),
 				bits -> mc.execute(() -> onBitsUsed(bits)),
 				text -> mc.execute(() -> status(text)));
+		controller.workshop.onProblem = text -> feed(parser.prefix() + text, "", COLOR_ERROR);
 		reloadParser();
 		loadTakeover();
 	}
@@ -141,6 +142,8 @@ public final class TwitchPlays {
 
 	public void reloadParser() {
 		parser = new CommandParser(config.prefix, config.maxHoldSeconds, config.aliases);
+		controller.workshop.paidIngredients = config.paidIngredients;
+		controller.workshop.paidHint = "duur: " + config.paidIngredientBits + " bits of punten";
 	}
 
 	public void reloadConfig() {
@@ -179,7 +182,7 @@ public final class TwitchPlays {
 				ParsedCommand command = cheered.get();
 				int cost = config.bitsCost.getOrDefault(command.action().id(), config.bitsDefaultCost);
 				if (message.bits() >= cost) {
-					run(command, message.displayName() + " [" + message.bits() + " bits]", COLOR_BITS);
+					run(command, message.displayName() + " [" + message.bits() + " bits]", COLOR_BITS, message.bits() >= config.paidIngredientBits);
 					return;
 				}
 			}
@@ -189,7 +192,7 @@ public final class TwitchPlays {
 		if (takeover.active()) {
 			// Only the viewer who took over: no voting, no cooldown, paid commands included.
 			if (takeover.controls(message.userId()) && parsed.isPresent() && isAllowed(parsed.get())) {
-				run(parsed.get(), message.displayName() + " [overname]", COLOR_TAKEOVER);
+				run(parsed.get(), message.displayName() + " [overname]", COLOR_TAKEOVER, true);
 			}
 			return;
 		}
@@ -198,7 +201,10 @@ public final class TwitchPlays {
 		}
 		ParsedCommand command = parsed.get();
 		if (config.democracy()) {
-			round.vote(message.userId(), command);
+			// A paid recipe can't win a free vote.
+			if (!controller.workshop.needsPayment(Minecraft.getInstance(), command)) {
+				round.vote(message.userId(), command);
+			}
 			return;
 		}
 		long now = System.currentTimeMillis();
@@ -207,7 +213,7 @@ public final class TwitchPlays {
 			return;
 		}
 		lastCommandAt.put(message.userId(), now);
-		run(command, message.displayName(), COLOR_CHAT);
+		run(command, message.displayName(), COLOR_CHAT, false);
 	}
 
 	public void onRedemption(EventSubClient.Redemption redemption) {
@@ -230,7 +236,7 @@ public final class TwitchPlays {
 			feed("onbekend: " + commandText, redemption.userName(), COLOR_ERROR);
 			return;
 		}
-		run(parsed.get(), redemption.userName() + " [punten]", COLOR_POINTS);
+		run(parsed.get(), redemption.userName() + " [punten]", COLOR_POINTS, true);
 	}
 
 	/** Bits from EventSub. Cheers also arrive in chat and are handled there, so only Power-ups count here. */
@@ -499,8 +505,8 @@ public final class TwitchPlays {
 
 	// ---- running commands ----
 
-	private void run(ParsedCommand command, String who, int color) {
-		String error = controller.execute(command, Minecraft.getInstance());
+	private void run(ParsedCommand command, String who, int color, boolean paid) {
+		String error = controller.execute(command, Minecraft.getInstance(), paid);
 		String what = parser.prefix() + command.canonical();
 		if (error == null) {
 			feed(what, who, color);
@@ -528,7 +534,7 @@ public final class TwitchPlays {
 		round = new VoteRound();
 		roundEndsAt = now + config.voteSeconds * 1000L;
 		finished.winner().ifPresent(winner -> run(winner.command(),
-				"[" + winner.votes() + "/" + finished.voters() + " stemmen]", COLOR_VOTE));
+				"[" + winner.votes() + "/" + finished.voters() + " stemmen]", COLOR_VOTE, false));
 	}
 
 	/** First time in a world: explain how to get started, since the overlay has no room for it. */
@@ -627,6 +633,7 @@ public final class TwitchPlays {
 				case COUNT -> out.append(" [aantal]");
 				case SLOT -> out.append(" <1-9>");
 				case TEXT -> out.append(" <item>");
+				case ITEM_COUNT -> out.append(" <item> [aantal]");
 				case NONE -> {
 				}
 			}

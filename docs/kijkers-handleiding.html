@@ -104,6 +104,7 @@
   .c-build { color: var(--gold); }
   .c-inv { color: var(--pink); }
   .c-pay { color: var(--purple-soft); }
+  .c-craft { color: #4fe0c0; }
 
   .paid { grid-column: 1 / -1; }
   .paid-body { display: grid; grid-template-columns: 1.1fr 1fr 1fr 1fr; }
@@ -129,7 +130,7 @@
   .reward b { color: var(--gold); }
 
   .combos { grid-column: 1 / -1; }
-  .combo-body { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .combo-body { display: grid; grid-template-columns: repeat(5, 1fr); }
   .combo { padding: 14px 18px; border-right: 1px solid var(--line); }
   .combo:last-child { border-right: none; }
   .combo h4 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
@@ -139,7 +140,7 @@
     content: counter(step); flex: none; width: 20px; height: 20px; border-radius: 50%;
     display: grid; place-items: center; font-size: 12px; font-weight: 800; background: var(--panel-2); color: var(--muted); border: 1px solid var(--line);
   }
-  .combo code { color: #fff; font-size: 14.5px; }
+  .combo code { color: #fff; font-size: 14.5px; white-space: nowrap; }
 
   footer { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 14px; }
   footer .keys { display: flex; gap: 18px; }
@@ -222,6 +223,12 @@
     <div class="row"><div><span class="cmd">!pillar</span><span class="alias">!toren  !bouwop</span></div><div class="what">Jezelf omhoog bouwen (max 5)<small>Pakt zelf blokken uit de inventory</small></div><span class="chip">blokken</span></div>
     <div class="row"><div><span class="cmd">!bridge</span><span class="alias">!brug</span></div><div class="what">Brug recht vooruit bouwen en eroverheen sluipen (standaard 3, max 10)</div><span class="chip">blokken</span></div>
   </section>
+<section class="card">
+    <h2 class="c-craft"><span class="dot"></span><span>Craften en smelten</span></h2>
+    <div class="row"><div><span class="cmd">!craft &lt;item&gt;</span><span class="alias">!maak</span></div><div class="what">Item craften van wat er in de inventory zit<small><span class="cmd" style="font-size:13px">!craft fakkel 4</span> = 4 keer (max 16) &middot; groot: werkbank in de buurt</small></div><span class="chip">aantal</span></div>
+    <div class="row"><div><span class="cmd">!bak &lt;item&gt;</span><span class="alias">!smelt  !oven</span></div><div class="what">In de oven of smoker doen<small><span class="cmd" style="font-size:13px">!bak vlees</span> &middot; brandstof gaat er vanzelf bij</small></div><span class="chip">aantal</span></div>
+    <div class="row"><div><span class="cmd">!ophalen</span><span class="alias">!collect</span></div><div class="what">Uit de ovens halen wat klaar is</div><span class="chip none">-</span></div>
+  </section>
   </div>
 
   
@@ -244,6 +251,7 @@
         <div class="price"><span><span class="cmd">!dropstack</span><span class="desc">hele stack weggooien</span></span><span class="cost">100 bits</span></div>
         <div class="price"><span><span class="cmd">!unequip</span><span class="desc">armor uittrekken</span></span><span class="cost">300 bits</span></div>
         <div class="price"><span><span class="cmd">!shuffle</span><span class="desc">inventory door elkaar</span></span><span class="cost">500 bits</span></div>
+        <div class="price"><span><span class="cmd">!craft</span><span class="desc">met diamant of netheriet</span></span><span class="cost">100 bits</span></div>
         <p style="margin-top:8px;font-size:13.5px;color:var(--muted)">Alleen met een cheer of kanaalpunten; gewoon typen doet niets.</p>
       </div>
       <div class="paid-col">
@@ -278,7 +286,7 @@
       <div class="paid-col">
         <h4>Wat mag je?</h4>
         <p>Alleen <b>jouw</b> commando's tellen: geen wachttijd, geen stemronde.</p>
-        <p>Ook <span class="cmd" style="font-size:14px">!shuffle</span>, <span class="cmd" style="font-size:14px">!unequip</span> en <span class="cmd" style="font-size:14px">!dropstack</span> zijn dan gratis.</p>
+        <p>Ook <span class="cmd" style="font-size:14px">!shuffle</span>, <span class="cmd" style="font-size:14px">!unequip</span> en <span class="cmd" style="font-size:14px">!dropstack</span> zijn dan gratis, net als craften met diamant.</p>
       </div>
       <div class="paid-col">
         <h4>Goed om te weten</h4>
@@ -305,8 +313,12 @@
         <ol><li><code>!noord</code> kies de richting</li><li><code>!bridge 8</code> bouw de brug</li></ol>
       </div>
       <div class="combo">
+        <h4>Gereedschap maken</h4>
+        <ol><li><code>!craft planken</code></li><li><code>!craft stokken</code></li><li><code>!craft houweel</code> bij een werkbank</li></ol>
+      </div>
+      <div class="combo">
         <h4>Honger?</h4>
-        <ol><li><code>!eet</code> pakt en eet eten</li><li><code>!inv</code> zie wat er nog is</li></ol>
+        <ol><li><code>!bak vlees 4</code> bij een oven</li><li><code>!ophalen</code> even later</li><li><code>!eet</code> pakt en eet eten</li></ol>
       </div>
     </div>
   </section>

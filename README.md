@@ -15,7 +15,7 @@ Je hebt nodig: Minecraft Java Edition **26.3** op Windows, de officiële Minecra
 
 1. **Fabric Loader**: download de installer van https://fabricmc.net/use/installer/, kies *Client*, Minecraft-versie **26.3** en Loader **0.19.5** (of nieuwer), en klik *Install*. In de launcher verschijnt een profiel "fabric-loader-26.3".
 2. **Fabric API** voor 26.3 (bijv. `fabric-api-0.162.0+26.3.jar`), van https://modrinth.com/mod/fabric-api.
-3. **Twitch Plays**: de jar (bijv. `twitchplays-1.1.1.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
+3. **Twitch Plays**: de jar (bijv. `twitchplays-1.2.0.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
 
 Zet de jars van stap 2 en 3 in de map `mods` van je Minecraft-map (standaard `%APPDATA%\.minecraft\mods`) en start het Fabric-profiel.
 
@@ -66,6 +66,9 @@ Het getal is optioneel. Zonder getal geldt de standaardwaarde.
 | `!next` / `!prev` | `!volgende` `!vorige` | volgend/vorig slot | |
 | `!pak <item>` | `!grab` `!take` `!neem` | item uit je hele inventory in je hand nemen, bijv. `!pak diamond pickaxe` of `!pak brood` | itemnaam |
 | `!inv` | `!inventory` | inventory 3 seconden openen, zodat chat ziet wat je hebt | |
+| `!craft <item>` | `!maak` | item craften, bijv. `!craft fakkel 4` | itemnaam, aantal keer (1, max 16) |
+| `!smelt <item>` | `!bak` `!oven` `!cook` | iets in de oven, smoker of hoogoven doen, bijv. `!bak vlees` | itemnaam, aantal (1, max 16) |
+| `!ophalen` | `!collect` | wat klaar is uit de ovens in de buurt halen | |
 | `!drop` | `!q` `!gooi` | item weggooien | aantal |
 | `!swap` | `!offhand` `!wissel` | wisselen met de andere hand | |
 | `!dropstack` | `!gooialles` | hele stack weggooien | **betaald** |
@@ -120,6 +123,27 @@ Chat mag de Engelse naam typen (`!pak diamond pickaxe`, `!pak bread`) of de naam
 
 Met `!inv` gaat je inventory 3 seconden open, zodat kijkers kunnen zien wat je bij je hebt. Daarna sluit het vanzelf. Commando's die chat in die 3 seconden stuurt, worden overgeslagen; in de overlay staat dan "menu open".
 
+### Craften en smelten
+
+**`!craft <item> [aantal]`** maakt een item van wat je in je inventory hebt, bijvoorbeeld `!craft planken`, `!craft fakkel 4` of `!maak stokken`. Het werkt zoals het receptenboek in Minecraft: de mod kiest het recept en Minecraft legt de ingrediënten zelf in het raster. Er komt dus niets gratis bij.
+
+- Het aantal is hoe vaak er gecraft wordt: `!craft fakkel 4` geeft 16 fakkels. Standaard 1 keer, maximaal 16.
+- Kleine recepten (planken, stokken, fakkels, een werkbank) gaan in het 2x2-raster van je inventory, dus overal.
+- Grote recepten (gereedschap, ovens, kisten) hebben een **werkbank binnen handbereik** nodig. De mod kijkt ernaar, opent hem, craft het item en sluit hem weer. Staat er geen werkbank in de buurt, dan staat er "geen werkbank in de buurt" in de overlay.
+- Alleen recepten die in je receptenboek staan, werken. Die krijg je vanzelf zodra je een ingrediënt oppakt. Mist er iets, dan staat er "mist ingrediënten".
+- **Diamant en netheriet zijn betaald**: met die ingrediënten craft chat alleen met een cheer van 100 bits (`Cheer100 !craft diamond pickaxe`), een kanaalpunt-beloning met `*`, of tijdens een overname. Zo kan een trol je diamanten niet verspillen. Welke ingrediënten betaald zijn, staat in `paidIngredients` in de config.
+
+**`!smelt <item> [aantal]`** (of `!bak`) doet iets in een oven binnen handbereik, bijvoorbeeld `!bak vlees 4`, `!smelt raw iron` of `!bak zand`.
+
+- Je mag de naam typen van wat erin gaat (`!bak rauw rundvlees`) of van wat eruit komt (`!smelt ijzerstaaf`). `!bak vlees` neemt welk rauw vlees je ook hebt, `!bak vis` rauwe vis.
+- Eten gaat bij voorkeur in een **smoker** en erts in een **hoogoven**: die zijn twee keer zo snel. Staat er alleen een gewone oven, dan gaat het daarin.
+- De mod legt er zelf **brandstof** bij als dat nodig is: eerst houtskool of steenkool, dan gedroogde kelp, planken, hout of stokken. Blaze rods en lavaemmers laat hij liggen.
+- Is een oven bezig met iets anders, dan neemt de mod de volgende oven in de buurt. Wat klaar is, haalt hij er eerst uit.
+
+**`!ophalen`** opent de ovens binnen handbereik (maximaal 4) en haalt eruit wat klaar is. Je krijgt dan ook de ervaringspunten.
+
+Tijdens het craften of smelten staat het scherm ongeveer een seconde open, zodat kijkers zien wat er gebeurt. Commando's in die tijd worden overgeslagen ("menu open"). Druk jij zelf op Esc, dan stopt het.
+
 ### Handleidingen voor Discord
 
 Er zijn twee kant-en-klare afbeeldingen die je in Discord kunt zetten:
@@ -131,7 +155,7 @@ De prijzen en beloningen op de kijkershandleiding zijn de standaardwaarden. Pas 
 
 ### Tekst voor je Twitch-panel
 
-> **Bestuur mijn Minecraft!** Typ in chat: `!forward 3`, `!back`, `!left`, `!right`, `!jump`, `!jumpforward`, `!sprintjump`, `!pillar 3`, `!bridge 5`, `!noord`/`!oost`/`!zuid`/`!west`, `!stap 3`, `!lookleft 90`, `!lookup`, `!mine 3`, `!attack`, `!use`, `!eat`, `!1`–`!9`, `!pak <item>` (bijv. `!pak houweel`), `!inv`, `!drop`, `!swap`. In democratie-modus stem je: elke 5 seconden wint het populairste commando. Cheer bits met een commando (bijv. `Cheer300 !unequip`) en het gebeurt meteen!
+> **Bestuur mijn Minecraft!** Typ in chat: `!forward 3`, `!back`, `!left`, `!right`, `!jump`, `!jumpforward`, `!sprintjump`, `!pillar 3`, `!bridge 5`, `!noord`/`!oost`/`!zuid`/`!west`, `!stap 3`, `!lookleft 90`, `!lookup`, `!mine 3`, `!attack`, `!use`, `!eat`, `!1`–`!9`, `!pak <item>` (bijv. `!pak houweel`), `!inv`, `!craft <item>` (bijv. `!craft fakkel 4`), `!bak vlees`, `!ophalen`, `!drop`, `!swap`. In democratie-modus stem je: elke 5 seconden wint het populairste commando. Cheer bits met een commando (bijv. `Cheer300 !unequip`) en het gebeurt meteen!
 
 ## Bits
 
@@ -141,6 +165,7 @@ Een cheer met een commando erin wordt meteen uitgevoerd, ook in democratie en zo
 - `unequip`: 300
 - `shuffle`: 500
 - alle andere commando's: 1 bit (`bitsDefaultCost`)
+- craften of smelten met diamant of netheriet: 100 bits (`paidIngredientBits`)
 
 Is de cheer te laag, dan telt het commando als gewoon chatbericht. Betaalde commando's worden dan genegeerd.
 
@@ -306,6 +331,8 @@ Het bestand is `config\twitchplays.json` in je Minecraft-map (standaard `%APPDAT
 | `modsCanSwitchMode` | `true` | Mods mogen `!anarchie`/`!democratie` typen |
 | `paidOnly` | dropstack, shuffle, unequip | Alleen via bits of kanaalpunten |
 | `bitsCost` / `bitsDefaultCost` | zie boven | Bits per commando |
+| `paidIngredients` | diamond, netherite_ingot, netherite_scrap, ancient_debris | Craften/smelten met deze ingrediënten alleen via bits, kanaalpunten of een overname. Itemnamen in het Engels, bijv. `"emerald"` erbij |
+| `paidIngredientBits` | `100` | Bits voor een cheer die craft of smelt met een betaald ingrediënt |
 | `rewards` | zie boven | Titel kanaalpunt-beloning → commando |
 | `aliases` | `{}` | Eigen woorden, bijv. `{"loop": "forward"}` |
 | `disabled` | `[]` | Commando's die helemaal uit staan, bijv. `["drop", "dropstack"]` |

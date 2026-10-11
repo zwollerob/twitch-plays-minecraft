@@ -2,7 +2,7 @@ package nl.zwollerob.twitchplays.command;
 
 import java.util.Locale;
 
-/** A command with its amount, or for {@link Action.Kind#TEXT} commands its text (lower case). */
+/** A command with its amount, and for {@link Action.Kind#TEXT} and {@link Action.Kind#ITEM_COUNT} commands its text (lower case). */
 public record ParsedCommand(Action action, double amount, String text) {
 	public ParsedCommand(Action action, double amount) {
 		this(action, amount, "");
@@ -12,6 +12,9 @@ public record ParsedCommand(Action action, double amount, String text) {
 	public String canonical() {
 		if (action.kind == Action.Kind.TEXT) {
 			return action.id() + " " + text;
+		}
+		if (action.kind == Action.Kind.ITEM_COUNT) {
+			return action.id() + " " + text + (amount == action.defaultAmount ? "" : " " + formatAmount());
 		}
 		if (action.kind == Action.Kind.NONE || action.kind != Action.Kind.SLOT && amount == action.defaultAmount) {
 			return action.id();

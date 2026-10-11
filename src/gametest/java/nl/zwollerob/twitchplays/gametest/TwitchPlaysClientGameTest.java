@@ -8,7 +8,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.inventory.AbstractFurnaceMenu;
+import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
@@ -324,7 +329,96 @@ public class TwitchPlaysClientGameTest implements FabricClientGameTest {
 			chat(ctx, "ander2", "!forward 1", 0);
 			ctx.waitTicks(3);
 			check(feedTop(ctx).equals("!forward  ander2"), "after the takeover everyone can play again: " + feedTop(ctx));
+
+			// Crafting: small recipes in the 2x2 grid of the inventory, without a crafting table.
+			server.runCommand("clear @a");
+			server.runCommand("recipe give @a *");
+			server.runCommand("give @a minecraft:oak_log 4");
+			server.runCommand("give @a minecraft:coal 2");
+			server.runCommand("give @a minecraft:beef 3");
+			server.runCommand("give @a minecraft:raw_iron 1");
+			server.runCommand("give @a minecraft:diamond 3");
+			world.getConnection().waitForClientboundPackets();
+			ctx.waitTicks(10);
+			chat(ctx, "smid1", "!craft planks 2", 0);
+			ctx.waitFor(mc -> mc.gui.screen() instanceof InventoryScreen && mc.player.inventoryMenu.getResultSlot().hasItem(), 20);
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("twitchplays-craft-inventory");
+			ctx.waitFor(mc -> mc.gui.screen() == null && !TwitchPlaysClient.get().controller.workshop.busy(), 100);
+			check(count(ctx, Items.OAK_PLANKS) == 8 && count(ctx, Items.OAK_LOG) == 2, "!craft planks 2 should turn 2 logs into 8 planks: " + feedTop(ctx)
+					+ " planks=" + count(ctx, Items.OAK_PLANKS) + " logs=" + count(ctx, Items.OAK_LOG));
+			// The test game is in English; a plural finds the item too.
+			chat(ctx, "smid2", "!maak sticks", 0);
+			ctx.waitTicks(3);
+			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 100);
+			check(count(ctx, Items.STICK) == 4 && count(ctx, Items.OAK_PLANKS) == 6, "!maak sticks should make 4 sticks from 2 planks: " + feedTop(ctx)
+					+ " sticks=" + count(ctx, Items.STICK) + " planks=" + count(ctx, Items.OAK_PLANKS));
+
+			// Big recipes need a crafting table within reach.
+			chat(ctx, "smid3", "!craft wooden pickaxe", 0);
+			ctx.waitTicks(3);
+			check(feedTop(ctx).contains("geen werkbank"), "without a crafting table, say so: " + feedTop(ctx));
+			BlockPos feet = ctx.computeOnClient(mc -> mc.player.blockPosition());
+			BlockPos table = feet.east(2);
+			BlockPos furnace = feet.west(2);
+			BlockPos smoker = feet.north(2);
+			server.runCommand("setblock " + table.getX() + " " + table.getY() + " " + table.getZ() + " minecraft:crafting_table");
+			server.runCommand("setblock " + furnace.getX() + " " + furnace.getY() + " " + furnace.getZ() + " minecraft:furnace");
+			server.runCommand("setblock " + smoker.getX() + " " + smoker.getY() + " " + smoker.getZ() + " minecraft:smoker");
+			world.getConnection().waitForClientboundPackets();
+			ctx.waitTicks(5);
+			chat(ctx, "smid4", "!craft wooden pickaxe", 0);
+			ctx.waitFor(mc -> mc.player.containerMenu instanceof CraftingMenu menu && menu.getResultSlot().hasItem(), 40);
+			ctx.waitTicks(2);
+			ctx.takeScreenshot("twitchplays-craft-table");
+			ctx.waitFor(mc -> mc.gui.screen() == null && !TwitchPlaysClient.get().controller.workshop.busy(), 100);
+			check(count(ctx, Items.WOODEN_PICKAXE) == 1 && count(ctx, Items.OAK_PLANKS) == 3 && count(ctx, Items.STICK) == 2,
+					"!craft wooden pickaxe should use the crafting table: " + feedTop(ctx));
+
+			// Diamonds are paid: free chat can't, 100 bits can.
+			chat(ctx, "smid5", "!craft diamond pickaxe", 0);
+			ctx.waitTicks(3);
+			check(feedTop(ctx).contains("duur") && count(ctx, Items.DIAMOND) == 3, "free chat must not craft with diamonds: " + feedTop(ctx));
+			chat(ctx, "smid6", "Cheer100 !craft diamond pickaxe", 100);
+			ctx.waitTicks(3);
+			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 100);
+			check(count(ctx, Items.DIAMOND_PICKAXE) == 1 && count(ctx, Items.DIAMOND) == 0, "Cheer100 may craft with diamonds: " + feedTop(ctx));
+
+			// Smelting: meat goes in the smoker (faster than the furnace), with coal as fuel.
+			chat(ctx, "kok", "!bak vlees 3", 0);
+			ctx.waitFor(mc -> mc.player.containerMenu instanceof AbstractFurnaceMenu menu && menu.getSlot(AbstractFurnaceMenu.INGREDIENT_SLOT).hasItem(), 60);
+			ctx.waitTicks(6);
+			ctx.takeScreenshot("twitchplays-smoker");
+			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 100);
+			ItemStack smokerInput = slot(server, smoker, 0);
+			check(smokerInput.is(Items.BEEF) && count(ctx, Items.BEEF) == 0, "!bak vlees should put all beef in the smoker: " + feedTop(ctx) + " input=" + smokerInput);
+			// The smoker burns the coal right away, so it is gone from the fuel slot too.
+			check(count(ctx, Items.COAL) == 1, "one coal is enough for 3 beef: coal left=" + count(ctx, Items.COAL) + " fuel=" + slot(server, smoker, 1));
+			chat(ctx, "smelter", "!smelt raw iron", 0);
+			ctx.waitTicks(3);
+			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 100);
+			check(slot(server, furnace, 0).is(Items.RAW_IRON) && count(ctx, Items.COAL) == 0, "raw iron goes in the furnace with the last coal: " + feedTop(ctx)
+					+ " input=" + slot(server, furnace, 0) + " coal left=" + count(ctx, Items.COAL));
+			// A smoker cooks one item per 5 seconds.
+			ctx.waitTicks(320);
+			chat(ctx, "ophaler", "!ophalen", 0);
+			ctx.waitTicks(3);
+			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 300);
+			check(count(ctx, Items.COOKED_BEEF) == 3, "!ophalen should take the 3 steaks out: " + feedTop(ctx) + " steaks=" + count(ctx, Items.COOKED_BEEF));
+			check(count(ctx, Items.IRON_INGOT) == 1, "!ophalen also empties the furnace: ingots=" + count(ctx, Items.IRON_INGOT));
+			chat(ctx, "ophaler2", "!ophalen", 0);
+			ctx.waitTicks(3);
+			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 300);
+			check(feedTop(ctx).contains("nog niets klaar"), "nothing left to collect: " + feedTop(ctx));
 		}
+	}
+
+	private static int count(ClientGameTestContext ctx, Item item) {
+		return ctx.computeOnClient(mc -> mc.player.getInventory().countItem(item));
+	}
+
+	private static ItemStack slot(TestServerContext server, BlockPos pos, int slot) {
+		return server.computeOnServer(s -> ((Container) s.overworld().getBlockEntity(pos)).getItem(slot).copy());
 	}
 
 	private static void chat(ClientGameTestContext ctx, String user, String text, int bits) {

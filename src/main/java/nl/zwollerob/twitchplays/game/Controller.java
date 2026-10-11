@@ -87,6 +87,8 @@ public final class Controller {
 	private Walk walk;
 	/** Ticks left before the inventory that chat opened with !inv closes again; 0 when there is none. */
 	private int inventoryTicks;
+	/** Crafting and smelting, which work in a screen of their own. */
+	public final Workshop workshop = new Workshop();
 
 	/** Whether chat input can be applied right now (in a world, no menu open, not paused). */
 	public static boolean canControl(Minecraft mc) {
@@ -94,6 +96,8 @@ public final class Controller {
 	}
 
 	public void tick(Minecraft mc) {
+		// Before the check below: the workshop runs while its own screen is open.
+		workshop.tick(mc);
 		if (inventoryTicks > 0 && --inventoryTicks == 0) {
 			closeChatInventory(mc);
 		}
@@ -158,8 +162,11 @@ public final class Controller {
 		}
 	}
 
-	/** Runs a command. Returns null when it worked, or a short reason why it could not. */
-	public String execute(ParsedCommand command, Minecraft mc) {
+	/**
+	 * Runs a command. Returns null when it worked, or a short reason why it could not.
+	 * Paid means bits, channel points or a takeover: only then may crafting use paid ingredients.
+	 */
+	public String execute(ParsedCommand command, Minecraft mc, boolean paid) {
 		if (!canControl(mc)) {
 			return "niet in de wereld of menu open";
 		}
@@ -246,6 +253,14 @@ public final class Controller {
 			case UNEQUIP -> {
 				if (!unequip(mc, player)) {
 					return "geen armor aan";
+				}
+			}
+			case CRAFT, SMELT, COLLECT -> {
+				// Stand still while the screen is open; this also stops sneaking, which would place blocks instead.
+				stopAll();
+				String error = workshop.start(mc, command, paid);
+				if (error != null) {
+					return error;
 				}
 			}
 			case STOP -> stopAll();

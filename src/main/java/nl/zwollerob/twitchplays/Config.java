@@ -42,6 +42,10 @@ public final class Config {
 			"shuffle", 500));
 	/** Bits needed for commands not listed in bitsCost. */
 	public int bitsDefaultCost = 1;
+	/** Crafting or smelting with one of these ingredients needs bits, channel points or a takeover; free chat can't. */
+	public List<String> paidIngredients = new ArrayList<>(List.of("diamond", "netherite_ingot", "netherite_scrap", "ancient_debris"));
+	/** Bits needed to craft or smelt with paidIngredients, e.g. "Cheer100 !craft diamond pickaxe". */
+	public int paidIngredientBits = 100;
 	/**
 	 * Channel point reward title -> command. "*" uses the text the viewer typed in the reward
 	 * as the command, so make that reward require user input.
@@ -135,6 +139,7 @@ public final class Config {
 		if (mode == null) mode = defaults.mode;
 		if (paidOnly == null) paidOnly = defaults.paidOnly;
 		if (bitsCost == null) bitsCost = defaults.bitsCost;
+		if (paidIngredients == null) paidIngredients = defaults.paidIngredients;
 		if (rewards == null) rewards = defaults.rewards;
 		if (aliases == null) aliases = defaults.aliases;
 		if (disabled == null) disabled = defaults.disabled;

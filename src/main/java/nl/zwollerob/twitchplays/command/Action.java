@@ -38,6 +38,9 @@ public enum Action {
 	PREV_SLOT(Kind.NONE, 0, 0, "prev", "previous", "vorige"),
 	GRAB(Kind.TEXT, 0, 0, "grab", "pak", "take", "neem"),
 	INVENTORY(Kind.NONE, 0, 0, "inv", "inventory"),
+	CRAFT(Kind.ITEM_COUNT, 1, 16, "craft", "maak"),
+	SMELT(Kind.ITEM_COUNT, 1, 16, "smelt", "bak", "cook", "oven", "smelten", "bakken"),
+	COLLECT(Kind.NONE, 0, 0, "collect", "ophalen"),
 	DROP(Kind.COUNT, 1, 10, "drop", "q", "gooi"),
 	DROP_STACK(Kind.NONE, 0, 0, "dropstack", "dropall", "gooialles"),
 	SWAP(Kind.NONE, 0, 0, "swap", "offhand", "wissel"),
@@ -56,6 +59,8 @@ public enum Action {
 		SLOT,
 		/** Free text, such as an item name ("!pak diamond pickaxe"), required. */
 		TEXT,
+		/** An item name, required, with an optional count ("!craft torch 4"). */
+		ITEM_COUNT,
 		/** Takes no amount. */
 		NONE
 	}

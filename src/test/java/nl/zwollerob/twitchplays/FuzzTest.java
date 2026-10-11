@@ -75,11 +75,12 @@ class FuzzTest {
 		for (int i = 0; i < 20_000; i++) {
 			Action action = Action.values()[random.nextInt(Action.values().length)];
 			String alias = action.aliases.get(random.nextInt(action.aliases.size()));
-			String argument = switch (random.nextInt(4)) {
+			String argument = switch (random.nextInt(5)) {
 				case 0 -> "";
 				case 1 -> " " + (random.nextDouble() * 1e12 - 5e11);
 				case 2 -> " " + random.nextInt();
-				default -> " x" + random.nextInt(9);
+				case 3 -> " x" + random.nextInt(9);
+				default -> " x " + random.nextInt();
 			};
 			check("!" + alias + argument);
 		}
@@ -113,8 +114,9 @@ class FuzzTest {
 			case SLOT -> assertTrue(amount >= 1 && amount <= 9 && amount == Math.rint(amount), command.toString());
 			case SECONDS -> assertTrue(amount >= 0.1 && amount <= action.maxAmount, command.toString());
 			case DEGREES, COUNT -> assertTrue(amount >= 1 && amount <= action.maxAmount, command.toString());
+			case ITEM_COUNT -> assertTrue(amount >= 1 && amount <= action.maxAmount && amount == Math.rint(amount), command.toString());
 		}
-		if (action.kind == Action.Kind.TEXT) {
+		if (action.kind == Action.Kind.TEXT || action.kind == Action.Kind.ITEM_COUNT) {
 			assertTrue(!command.text().isEmpty() && command.text().length() <= 40, command.toString());
 		}
 	}

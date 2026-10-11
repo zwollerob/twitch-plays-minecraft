@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.0 (2026-10-11)
+
+### Craften en smelten
+- `!craft <item> [aantal]` (ook `!maak`): chat craft een item van wat er in je inventory zit, net als met het receptenboek. Bijvoorbeeld `!craft fakkel 4`: 4 keer craften, 16 fakkels. Standaard 1 keer, maximaal 16.
+- Kleine recepten gaan in het 2x2-raster van je inventory. Voor grote recepten opent de mod een werkbank binnen handbereik; staat die er niet, dan meldt de overlay dat.
+- `!smelt <item> [aantal]` (ook `!bak`, `!oven`): iets in een oven, smoker of hoogoven binnen handbereik doen. Eten gaat bij voorkeur in de smoker, erts in de hoogoven. `!bak vlees` neemt welk rauw vlees je ook hebt.
+- De mod legt zelf genoeg brandstof bij (houtskool, steenkool, kelp, hout of stokken; geen blaze rods of lava) en haalt eerst uit de oven wat al klaar is. Is een oven bezig met iets anders, dan neemt hij de volgende.
+- `!ophalen`: haalt uit de ovens in de buurt wat klaar is, met de ervaringspunten.
+- Craften of smelten met diamant of netheriet kan alleen met een cheer van 100 bits, kanaalpunten of tijdens een overname. In te stellen met `paidIngredients` en `paidIngredientBits`.
+- Het scherm staat even open, zodat kijkers zien wat er gecraft wordt.
+
+### Itemnamen
+- Meervouden werken ook: `!pak fakkels`, `!craft planken`, `!craft sticks`.
+
 ## 1.1.1 (2026-10-11)
 
 ### Veiligheid

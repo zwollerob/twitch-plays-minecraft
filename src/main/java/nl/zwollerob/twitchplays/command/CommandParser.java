@@ -1,7 +1,9 @@
 package nl.zwollerob.twitchplays.command;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -15,6 +17,7 @@ public final class CommandParser {
 	private final double maxHoldSeconds;
 	/** Longest item name chat may type after !grab; longer text is not a command. */
 	static final int MAX_TEXT_LENGTH = 40;
+	private static final String NUMBER = "\\d+([.,]\\d+)?";
 
 	private final Map<String, Action> lookup = new HashMap<>();
 
@@ -96,6 +99,9 @@ public final class CommandParser {
 			}
 			return Optional.of(new ParsedCommand(action, 0, itemText));
 		}
+		if (action.kind == Action.Kind.ITEM_COUNT) {
+			return itemCount(action, new ArrayList<>(Arrays.asList(tokens).subList(used, tokens.length)));
+		}
 		if (tokens.length > 3 || rest > 1) {
 			return Optional.empty();
 		}
@@ -116,10 +122,26 @@ public final class CommandParser {
 		return build(action, amount);
 	}
 
+	/** "torch 4", "4 torch" or "torch": the count may come before or after the name. */
+	private static Optional<ParsedCommand> itemCount(Action action, List<String> words) {
+		Double amount = null;
+		if (words.size() > 1 && words.getLast().matches(NUMBER)) {
+			amount = Double.parseDouble(words.removeLast().replace(',', '.'));
+		} else if (words.size() > 1 && words.getFirst().matches(NUMBER)) {
+			amount = Double.parseDouble(words.removeFirst().replace(',', '.'));
+		}
+		String itemText = String.join(" ", words);
+		if (itemText.isEmpty() || itemText.length() > MAX_TEXT_LENGTH) {
+			return Optional.empty();
+		}
+		double count = amount == null ? action.defaultAmount : Math.floor(amount);
+		return Optional.of(new ParsedCommand(action, Math.clamp(count, 1, action.maxAmount), itemText));
+	}
+
 	private Optional<ParsedCommand> build(Action action, Double amount) {
 		return switch (action.kind) {
 			case NONE -> Optional.of(new ParsedCommand(action, 0));
-			case TEXT -> Optional.empty(); // handled in parseBare, which has the text
+			case TEXT, ITEM_COUNT -> Optional.empty(); // handled in parseBare, which has the text
 			case SLOT -> {
 				if (amount == null || amount != Math.rint(amount) || amount < 1 || amount > 9) {
 					yield Optional.empty();
