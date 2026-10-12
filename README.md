@@ -15,7 +15,7 @@ Je hebt nodig: Minecraft Java Edition **26.3** op Windows, de officiële Minecra
 
 1. **Fabric Loader**: download de installer van https://fabricmc.net/use/installer/, kies *Client*, Minecraft-versie **26.3** en Loader **0.19.5** (of nieuwer), en klik *Install*. In de launcher verschijnt een profiel "fabric-loader-26.3".
 2. **Fabric API** voor 26.3 (bijv. `fabric-api-0.162.0+26.3.jar`), van https://modrinth.com/mod/fabric-api.
-3. **Twitch Plays**: de jar (bijv. `twitchplays-1.2.0.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
+3. **Twitch Plays**: de jar (bijv. `twitchplays-1.3.0.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
 
 Zet de jars van stap 2 en 3 in de map `mods` van je Minecraft-map (standaard `%APPDATA%\.minecraft\mods`) en start het Fabric-profiel.
 
@@ -282,9 +282,22 @@ Het vuurwerk bestaat alleen uit deeltjes en geluid op je eigen scherm. Er wordt 
 | Raid | Twitch-chat | niets |
 | Bits (vanaf 100) | Twitch-chat | niets |
 | Follower | StreamElements | StreamElements koppelen |
-| Donatie | StreamElements | StreamElements koppelen |
+| Donatie | TipeeeStream en/of StreamElements | TipeeeStream of StreamElements koppelen |
 
 Meldingen werken ook als de besturing uit staat (F8).
+
+Je mag ze allebei koppelen: TipeeeStream voor je donaties en StreamElements alleen voor de follows. Een donatie komt maar via één van de twee binnen, dus je ziet hem nooit dubbel.
+
+### TipeeeStream koppelen (eenmalig)
+
+1. Log in op TipeeeStream en ga naar https://www.tipeeestream.com/dashboard/api-key (of klik onderaan het dashboard op *API*).
+2. Klik bij **Your API Key** op *Show* en kopieer de sleutel.
+3. Typ in Minecraft: `/twitchplays tipeeestream`. De mod leest de sleutel van je klembord en wist hem daarna van je klembord. Zo komt hij niet in je chat of in de lijst met vorige commando's.
+4. Je ziet "TipeeeStream verbonden: donaties actief". Staat er "TipeeeStream weigert de API-sleutel", kopieer hem dan opnieuw.
+
+De sleutel staat daarna versleuteld in `config\twitchplays-tipeeestream.txt`. Ontkoppelen doe je met `/twitchplays tipeeestream off`. Met `/twitchplays status` zie je of de verbinding er is.
+
+Elke donatie via TipeeeStream geeft de melding "DONATIE!" met de naam en het bedrag (bijv. "€ 5,00"). Follows en subs die TipeeeStream ook doorgeeft, slaat de mod over: die komen al uit de Twitch-chat.
 
 ### StreamElements koppelen (eenmalig)
 
@@ -312,6 +325,7 @@ Met `/twitchplays alert <soort>` zie je hoe een melding eruitziet. De soorten zi
 | `/twitchplays overlay` | Overlay tonen/verbergen |
 | `/twitchplays clientid <id>`, `login`, `logout` | Kanaalpunten-login |
 | `/twitchplays streamelements` / `streamelements off` | StreamElements koppelen (token van klembord) / ontkoppelen |
+| `/twitchplays tipeeestream` / `tipeeestream off` | TipeeeStream koppelen (API-sleutel van klembord) / ontkoppelen |
 | `/twitchplays alerts on` / `off` | Alle meldingen aan/uit |
 | `/twitchplays alert <soort>` | Voorbeeldmelding tonen (ook `takeover`) |
 | `/twitchplays takeover stop` | Huidige overname beëindigen |
@@ -349,12 +363,19 @@ Het bestand is `config\twitchplays.json` in je Minecraft-map (standaard `%APPDAT
 
 ### Tokens en veiligheid
 
-De login voor kanaalpunten (`config\twitchplays-login.json`) en het StreamElements-token (`config\twitchplays-streamelements.txt`) worden **versleuteld** opgeslagen met Windows DPAPI. Alleen jouw Windows-account op deze pc kan ze ontsleutelen; je hoeft geen wachtwoord te onthouden.
+De login voor kanaalpunten (`config\twitchplays-login.json`), het StreamElements-token (`config\twitchplays-streamelements.txt`) en de TipeeeStream-sleutel (`config\twitchplays-tipeeestream.txt`) worden **versleuteld** opgeslagen met Windows DPAPI. Alleen jouw Windows-account op deze pc kan ze ontsleutelen; je hoeft geen wachtwoord te onthouden.
 
 - Belandt het bestand ergens anders, bijvoorbeeld in een back-up, een gedeelde map of een zip die je naar iemand stuurt, dan is het daar onleesbaar.
 - Het beschermt niet tegen schadelijke software die als jouw Windows-gebruiker op deze pc draait. Zo'n programma kan het token net zo goed ontsleutelen als de mod. Deel de bestanden dus nog steeds niet bewust.
-- Nieuwe pc of ander Windows-account? Dan kan de mod de bestanden niet meer lezen. Koppel opnieuw met `/twitchplays streamelements` en `/twitchplays login`.
+- Nieuwe pc of ander Windows-account? Dan kan de mod de bestanden niet meer lezen. Koppel opnieuw met `/twitchplays streamelements`, `/twitchplays tipeeestream` en `/twitchplays login`.
 - Oude bestanden met platte tekst worden bij de eerste start automatisch versleuteld.
+
+Verder houdt de mod sleutels en tokens uit de rest van Minecraft:
+
+- **Niet in je geschiedenis.** Een regel met een sleutel of token komt niet in `command_history.txt` of in de chatgeschiedenis (pijltje omhoog), ook niet als je hem per ongeluk in de chat plakt.
+- **Niet in je logboek.** Meldingen van Twitch, StreamElements en TipeeeStream worden gemaskeerd voordat ze in het logboek of in beeld komen. Plak je een sleutel achter het commando, dan wordt hij niet gebruikt en ook niet gelogd.
+- **Alleen jouw account.** Log je in met een ander account dan dat van je kanaal, dan logt de mod meteen weer uit. Zo heeft een kijker die de inlogcode op stream ziet er niets aan. Laat die code toch liever niet in beeld komen.
+- **Wat niet versleuteld is, is ook niet geheim**: `twitchplays.json` (kanaalnaam, instellingen en je Client ID, die Twitch openbaar noemt) en `twitchplays-takeover.json` (wie er een overname heeft, met de Twitch-naam en -ID die toch al openbaar zijn).
 
 ## Goed om te weten
 
@@ -366,7 +387,7 @@ De login voor kanaalpunten (`config\twitchplays-login.json`) en het StreamElemen
 
 - **Bouwen**: `gradlew build` met JDK 25. De jar komt in `build\libs\`. Op Windows regelt `build.cmd` dat: het gebruikt `%USERPROFILE%\.jdks\jdk-25.0.4.1+1` als die bestaat, anders `JAVA_HOME`.
 - **Tests**:
-  - `gradlew test` draait de unit tests (parser, stemmen, Twitch-berichten, meldingen, StreamElements, versleuteling).
+  - `gradlew test` draait de unit tests (parser, stemmen, Twitch-berichten, meldingen, StreamElements, TipeeeStream, versleuteling).
   - `gradlew runClientGameTest` start Minecraft, maakt een wereld en speelt alle commando's na, met screenshots in `build\run\clientGameTest\screenshots`.
   - `gradlew runProductionClientGameTest` doet hetzelfde met de gebouwde jar. Op de ontwikkel-pc crashte dat harnas af en toe native (0xC0000005 / 0xC0000374), ook vóór de mod iets deed; `runClientGameTest` slaagde elke keer.
 - **Netwerkschijven**: Fabric Loom kan niet bouwen vanaf een netwerkpad met spaties (`\\server\map met spatie`). `build.cmd` omzeilt dat met een lokale projectcache. De game tests moeten vanaf een lokale schijf draaien.

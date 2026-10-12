@@ -3,6 +3,8 @@
 	"package": "nl.zwollerob.twitchplays.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
+		"ChatHistoryMixin",
+		"CommandHistoryMixin",
 		"KeyMappingAccessor"
 	],
 	"injectors": {

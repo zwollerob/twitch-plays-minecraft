@@ -5,6 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -23,6 +24,7 @@ import net.minecraft.resources.Identifier;
 import nl.zwollerob.twitchplays.hud.Overlay;
 import nl.zwollerob.twitchplays.twitch.Alert;
 import nl.zwollerob.twitchplays.twitch.StreamElementsClient;
+import nl.zwollerob.twitchplays.twitch.TipeeeStreamClient;
 import nl.zwollerob.twitchplays.twitch.TwitchAuth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,6 +62,7 @@ public class TwitchPlaysClient implements ClientModInitializer {
 				twitch.irc.disconnect();
 				twitch.eventSub.stop();
 				twitch.streamElements.stop();
+				twitch.tipeeeStream.stop();
 				twitch.saveTakeover();
 			}
 		});
@@ -124,12 +127,24 @@ public class TwitchPlaysClient implements ClientModInitializer {
 				.then(ClientCommands.literal("reload").executes(ctx -> reload()))
 				.then(ClientCommands.literal("streamelements")
 						.executes(ctx -> streamElements())
+						.then(pastedSecret())
 						.then(ClientCommands.literal("off").executes(ctx -> run(() -> {
 							try {
 								twitch.setStreamElementsToken("");
 								TwitchPlays.message(Component.literal("StreamElements ontkoppeld."));
 							} catch (IOException e) {
 								TwitchPlays.message(Component.literal("Kon het token niet verwijderen: " + e.getMessage()).withStyle(ChatFormatting.RED));
+							}
+						}))))
+				.then(ClientCommands.literal("tipeeestream")
+						.executes(ctx -> tipeeeStream())
+						.then(pastedSecret())
+						.then(ClientCommands.literal("off").executes(ctx -> run(() -> {
+							try {
+								twitch.setTipeeeStreamKey("");
+								TwitchPlays.message(Component.literal("TipeeeStream ontkoppeld."));
+							} catch (IOException e) {
+								TwitchPlays.message(Component.literal("Kon de sleutel niet verwijderen: " + e.getMessage()).withStyle(ChatFormatting.RED));
 							}
 						}))))
 				.then(ClientCommands.literal("alerts")
@@ -192,6 +207,37 @@ public class TwitchPlaysClient implements ClientModInitializer {
 		});
 	}
 
+	/**
+	 * A token or key pasted after the command. Without this, Minecraft would log the whole unknown command,
+	 * key included. It is not used: the clipboard is the safe way, and the command history skips this line.
+	 */
+	private static RequiredArgumentBuilder<FabricClientCommandSource, String> pastedSecret() {
+		return ClientCommands.argument("secret", StringArgumentType.greedyString()).executes(ctx -> run(() ->
+				TwitchPlays.message(Component.literal("Plak de sleutel niet achter het commando. Kopieer hem en typ alleen het commando; "
+						+ "de mod leest hem dan van je klembord. Wat je net plakte, is niet opgeslagen.").withStyle(ChatFormatting.RED))));
+	}
+
+	/** Read from the clipboard like the StreamElements token, so the key never shows up in chat or the command history. */
+	private static int tipeeeStream() {
+		return run(() -> {
+			Minecraft mc = Minecraft.getInstance();
+			String key = mc.keyboardHandler.getClipboard().strip();
+			if (!TipeeeStreamClient.looksLikeApiKey(key)) {
+				TwitchPlays.message(Component.literal("Kopieer eerst je API-sleutel: ")
+						.append(TwitchPlays.link("tipeeestream.com/dashboard/api-key", "https://www.tipeeestream.com/dashboard/api-key"))
+						.append(" → Your API Key → Show. Typ daarna opnieuw /twitchplays tipeeestream"));
+				return;
+			}
+			try {
+				twitch.setTipeeeStreamKey(key);
+				mc.keyboardHandler.setClipboard("");
+				TwitchPlays.message(Component.literal("API-sleutel opgeslagen en van je klembord gehaald. Verbinden met TipeeeStream..."));
+			} catch (IOException e) {
+				TwitchPlays.message(Component.literal("Kon de sleutel niet opslaan: " + e.getMessage()).withStyle(ChatFormatting.RED));
+			}
+		});
+	}
+
 	private static int run(Runnable action) {
 		if (twitch != null) {
 			action.run();
@@ -210,6 +256,8 @@ public class TwitchPlaysClient implements ClientModInitializer {
 							+ (twitch.eventSub.active() ? "" : " (niet actief)"))
 							+ "\nStreamElements: " + (twitch.streamElementsToken().isEmpty() ? "niet gekoppeld"
 							: twitch.streamElements.connected() ? "verbonden" : "niet verbonden")
+							+ "\nTipeeeStream: " + (twitch.tipeeeStreamKey().isEmpty() ? "niet gekoppeld"
+							: twitch.tipeeeStream.connected() ? "verbonden" : "niet verbonden")
 							+ "\nMeldingen: " + (c.alerts.enabled ? "aan" : "uit")
 							+ "\nConfig: config/twitchplays.json").withStyle(ChatFormatting.WHITE));
 		});
@@ -241,16 +289,23 @@ public class TwitchPlaysClient implements ClientModInitializer {
 								.append(TwitchPlays.link(code.verificationUri(), code.verificationUri()))
 								.append(" en voer code ")
 								.append(Component.literal(code.userCode()).withStyle(ChatFormatting.YELLOW, ChatFormatting.BOLD))
-								.append(" in (staat al op je klembord). Log in met het account van je kanaal."));
+								.append(" in (staat al op je klembord). Log in met het account van je kanaal. Laat deze code niet op je stream zien."));
 					}),
 					token -> mc.execute(() -> {
+						// A viewer who saw the code on stream could enter it with their own account first; only the channel's own account counts.
+						if (!c.channel.isBlank() && !token.login().equalsIgnoreCase(c.channel)) {
+							twitch.auth.logout();
+							TwitchPlays.message(Component.literal("Ingelogd als " + token.login() + ", maar je kanaal is #" + c.channel
+									+ ". Daarom weer uitgelogd. Typ /twitchplays login en log in met het account van je kanaal.").withStyle(ChatFormatting.RED));
+							return;
+						}
 						TwitchPlays.message(Component.literal("Ingelogd als " + token.login() + ".").withStyle(ChatFormatting.GREEN));
 						if (c.channel.isBlank()) {
 							twitch.setChannel(token.login());
 						}
 						twitch.eventSub.start(c.clientId);
 					}),
-					error -> mc.execute(() -> TwitchPlays.message(Component.literal(error).withStyle(ChatFormatting.RED))));
+					error -> mc.execute(() -> TwitchPlays.message(Component.literal(Secrets.mask(error)).withStyle(ChatFormatting.RED))));
 		});
 	}
 

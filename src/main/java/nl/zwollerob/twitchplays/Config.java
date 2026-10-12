@@ -81,7 +81,7 @@ public final class Config {
 		public boolean gifts = true;
 		/** Needs StreamElements (/twitchplays streamelements). */
 		public boolean follows = true;
-		/** Needs StreamElements (/twitchplays streamelements). */
+		/** Needs StreamElements (/twitchplays streamelements) or TipeeeStream (/twitchplays tipeeestream). */
 		public boolean donations = true;
 		public boolean raids = true;
 		public boolean bits = true;

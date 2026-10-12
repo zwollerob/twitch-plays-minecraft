@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.3.0 (2026-10-12)
+
+### Donaties via TipeeeStream
+- Donaties via TipeeeStream geven nu ook de melding "DONATIE!" in Minecraft, met naam, bedrag en vuurwerk.
+- Koppelen: kopieer je API-sleutel van tipeeestream.com/dashboard/api-key en typ `/twitchplays tipeeestream`. De sleutel wordt van je klembord gelezen, daarna gewist, en versleuteld opgeslagen. Ontkoppelen met `/twitchplays tipeeestream off`.
+- `/twitchplays status` toont of TipeeeStream verbonden is. Bij een foute sleutel zegt de mod dat meteen, in plaats van steeds opnieuw te proberen.
+- StreamElements blijft werken voor follows en eigen donaties; je kunt beide tegelijk koppelen.
+- De sleutel gaat alleen naar TipeeeStream zelf, over een beveiligde verbinding.
+
+### Veiligheid
+- De TipeeeStream-sleutel wordt net als de Twitch-login en het StreamElements-token versleuteld opgeslagen (Windows DPAPI).
+- Een sleutel of token komt nooit meer in Minecrafts commandogeschiedenis (`command_history.txt`) of in de chatgeschiedenis (pijltje omhoog), ook niet als je hem per ongeluk in de chat plakt.
+- Plak je een sleutel achter `/twitchplays streamelements` of `/twitchplays tipeeestream`, dan zegt de mod dat dat niet de bedoeling is. Minecraft schrijft dan ook geen foutmelding met de sleutel erin naar het logboek; dat gebeurde eerder wel.
+- Meldingen van Twitch en andere diensten worden gemaskeerd voordat ze in het logboek of in beeld komen: alles wat op een token lijkt, wordt `***`.
+- Inloggen met een ander account dan dat van je kanaal wordt geweigerd. Zo kan een kijker die de inlogcode op stream ziet, niet met zijn eigen account inloggen. De mod waarschuwt ook om de code niet op stream te laten zien.
+
 ## 1.2.0 (2026-10-11)
 
 ### Craften en smelten

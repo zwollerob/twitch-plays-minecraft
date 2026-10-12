@@ -46,6 +46,22 @@ public class TwitchPlaysClientGameTest implements FabricClientGameTest {
 			throw new AssertionError(e);
 		}
 
+		// A key pasted after the command never reaches the chat history or command_history.txt; normal commands do.
+		ctx.runOnClient(mc -> {
+			mc.gui.hud.getChat().addRecentChat("/twitchplays tipeeestream abcdef0123456789abcdef");
+			mc.gui.hud.getChat().addRecentChat("/twitchplays status");
+		});
+		check(ctx.computeOnClient(mc -> mc.gui.hud.getChat().getRecentChat().stream().noneMatch(line -> line.contains("abcdef0123456789"))),
+				"a pasted key must not be in the chat history");
+		check(ctx.computeOnClient(mc -> mc.gui.hud.getChat().getRecentChat().stream().anyMatch(line -> line.contains("twitchplays status"))),
+				"normal commands stay in the chat history");
+		try {
+			Path history = ctx.computeOnClient(mc -> mc.gameDirectory.toPath().resolve("command_history.txt"));
+			check(!Files.exists(history) || !Files.readString(history).contains("abcdef0123456789"), "a pasted key must not be saved in command_history.txt");
+		} catch (IOException e) {
+			throw new AssertionError(e);
+		}
+
 		try (TestSingleplayerContext world = ctx.worldBuilder().create()) {
 			world.getConnection().waitForChunksRender();
 			TestServerContext server = world.getServer();

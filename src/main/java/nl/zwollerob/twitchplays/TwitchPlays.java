@@ -20,6 +20,7 @@ import nl.zwollerob.twitchplays.twitch.ChatSender;
 import nl.zwollerob.twitchplays.twitch.EventSubClient;
 import nl.zwollerob.twitchplays.twitch.IrcClient;
 import nl.zwollerob.twitchplays.twitch.StreamElementsClient;
+import nl.zwollerob.twitchplays.twitch.TipeeeStreamClient;
 import nl.zwollerob.twitchplays.twitch.TwitchAuth;
 
 import com.google.gson.Gson;
@@ -64,6 +65,7 @@ public final class TwitchPlays {
 	public final TwitchAuth auth;
 	public final EventSubClient eventSub;
 	public final StreamElementsClient streamElements;
+	public final TipeeeStreamClient tipeeeStream;
 	public final AlertPlayer alerts = new AlertPlayer();
 	public final ChatSender chatSender;
 	public final Takeover takeover = new Takeover(new TakeoverEvents());
@@ -71,6 +73,7 @@ public final class TwitchPlays {
 	private long lastTakeoverTick;
 	private long lastTakeoverSave;
 	private final Path streamElementsTokenPath;
+	private final Path tipeeeStreamKeyPath;
 	/** Gift bombs arrive as one "N gifts" notice followed by N single gifts; those singles are folded into the first. */
 	private final Map<String, Integer> pendingGifts = new HashMap<>();
 	private final Map<String, Long> pendingGiftsSince = new HashMap<>();
@@ -89,6 +92,7 @@ public final class TwitchPlays {
 		config = Config.load(configPath);
 		auth = new TwitchAuth(configDir.resolve("twitchplays-login.json"));
 		streamElementsTokenPath = configDir.resolve("twitchplays-streamelements.txt");
+		tipeeeStreamKeyPath = configDir.resolve("twitchplays-tipeeestream.txt");
 		takeoverPath = configDir.resolve("twitchplays-takeover.json");
 		Minecraft mc = Minecraft.getInstance();
 		irc = new IrcClient(
@@ -98,6 +102,9 @@ public final class TwitchPlays {
 				text -> mc.execute(() -> status(text)));
 		chatSender = new ChatSender(auth, () -> config.clientId, text -> mc.execute(() -> status(text)));
 		streamElements = new StreamElementsClient(
+				alert -> mc.execute(() -> onAlert(alert)),
+				text -> mc.execute(() -> status(text)));
+		tipeeeStream = new TipeeeStreamClient(
 				alert -> mc.execute(() -> onAlert(alert)),
 				text -> mc.execute(() -> status(text)));
 		eventSub = new EventSubClient(auth,
@@ -123,6 +130,10 @@ public final class TwitchPlays {
 		if (!seToken.isEmpty()) {
 			streamElements.start(seToken);
 		}
+		String tipeeeKey = tipeeeStreamKey();
+		if (!tipeeeKey.isEmpty()) {
+			tipeeeStream.start(tipeeeKey);
+		}
 	}
 
 	public String streamElementsToken() {
@@ -138,6 +149,21 @@ public final class TwitchPlays {
 		}
 		SecretStore.write(streamElementsTokenPath, token);
 		streamElements.start(token);
+	}
+
+	public String tipeeeStreamKey() {
+		return SecretStore.read(tipeeeStreamKeyPath);
+	}
+
+	/** Saves the TipeeeStream API key and connects; an empty key disconnects and forgets it. */
+	public void setTipeeeStreamKey(String key) throws IOException {
+		if (key.isEmpty()) {
+			tipeeeStream.stop();
+			Files.deleteIfExists(tipeeeStreamKeyPath);
+			return;
+		}
+		SecretStore.write(tipeeeStreamKeyPath, key);
+		tipeeeStream.start(key);
 	}
 
 	public void reloadParser() {
@@ -600,6 +626,8 @@ public final class TwitchPlays {
 	}
 
 	public void status(String text) {
+		// Status texts can hold replies from Twitch or other services; never let a token reach the log or the screen.
+		text = Secrets.mask(text);
 		status = text;
 		TwitchPlaysClient.LOGGER.info(text);
 		message(Component.literal(text).withStyle(ChatFormatting.GRAY));

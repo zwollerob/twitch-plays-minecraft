@@ -1,5 +1,7 @@
 package nl.zwollerob.twitchplays.twitch;
 
+import java.text.NumberFormat;
+import java.util.Currency;
 import java.util.Locale;
 
 /**
@@ -34,6 +36,22 @@ public record Alert(Type type, String user, String detail, int amount, String gi
 
 	public static Alert of(Type type, String user, String detail, int amount) {
 		return new Alert(type, user, detail, amount, "");
+	}
+
+	/** A donation, with the amount written the Dutch way ("€ 4,20"). An unnamed donor is "Anoniem". */
+	public static Alert donation(String user, double amount, String currency) {
+		String name = user == null || user.isBlank() ? "Anoniem" : user;
+		return of(Type.DONATION, name, money(amount, currency), (int) Math.round(amount));
+	}
+
+	static String money(double amount, String currency) {
+		NumberFormat format = NumberFormat.getCurrencyInstance(Locale.of("nl", "NL"));
+		try {
+			format.setCurrency(Currency.getInstance(currency.toUpperCase(Locale.ROOT)));
+		} catch (Exception e) {
+			return String.format(Locale.ROOT, "%.2f %s", amount, currency).strip();
+		}
+		return format.format(amount).replace(' ', ' ');
 	}
 
 	/**

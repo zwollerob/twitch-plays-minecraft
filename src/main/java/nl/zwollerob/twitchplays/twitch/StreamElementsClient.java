@@ -9,10 +9,8 @@ import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.nio.charset.StandardCharsets;
-import java.text.NumberFormat;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.Currency;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -254,8 +252,7 @@ public final class StreamElementsClient {
 			JsonObject user = donation.getAsJsonObject("user");
 			String name = user == null ? "" : string(user, "username");
 			double amount = donation.has("amount") ? donation.get("amount").getAsDouble() : 0;
-			return Alert.of(Alert.Type.DONATION, name.isEmpty() ? "Anoniem" : name,
-					formatMoney(amount, string(donation, "currency")), (int) Math.round(amount));
+			return Alert.donation(name, amount, string(donation, "currency"));
 		}
 		if (topic.equals("channel.activities") && string(data, "type").equals("follow")) {
 			JsonObject user = data.getAsJsonObject("data");
@@ -273,16 +270,6 @@ public final class StreamElementsClient {
 			return Alert.of(Alert.Type.FOLLOW, name, "", 1);
 		}
 		return null;
-	}
-
-	static String formatMoney(double amount, String currency) {
-		NumberFormat format = NumberFormat.getCurrencyInstance(Locale.of("nl", "NL"));
-		try {
-			format.setCurrency(Currency.getInstance(currency.toUpperCase(Locale.ROOT)));
-		} catch (Exception e) {
-			return String.format(Locale.ROOT, "%.2f %s", amount, currency).strip();
-		}
-		return format.format(amount).replace(' ', ' ');
 	}
 
 	private static String string(JsonObject object, String key) {
