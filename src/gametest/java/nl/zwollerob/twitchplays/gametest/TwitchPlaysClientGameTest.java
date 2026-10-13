@@ -426,6 +426,30 @@ public class TwitchPlaysClientGameTest implements FabricClientGameTest {
 			ctx.waitTicks(3);
 			ctx.waitFor(mc -> !TwitchPlaysClient.get().controller.workshop.busy(), 300);
 			check(feedTop(ctx).contains("nog niets klaar"), "nothing left to collect: " + feedTop(ctx));
+
+			// Swimming: under water the player floats up by itself; !sneak dives; with control off nothing helps.
+			BlockPos poolTop = ctx.computeOnClient(mc -> mc.player.blockPosition()).above(10);
+			server.runCommand("fill " + (poolTop.getX() - 2) + " " + (poolTop.getY() - 8) + " " + (poolTop.getZ() - 2) + " "
+					+ (poolTop.getX() + 2) + " " + (poolTop.getY() - 1) + " " + (poolTop.getZ() + 2) + " minecraft:glass");
+			server.runCommand("fill " + (poolTop.getX() - 1) + " " + (poolTop.getY() - 7) + " " + (poolTop.getZ() - 1) + " "
+					+ (poolTop.getX() + 1) + " " + (poolTop.getY() - 1) + " " + (poolTop.getZ() + 1) + " minecraft:water");
+			server.runCommand("tp @a " + (poolTop.getX() + 0.5) + " " + (poolTop.getY() - 6) + " " + (poolTop.getZ() + 0.5) + " 0 0");
+			world.getConnection().waitForClientboundPackets();
+			ctx.waitTicks(100);
+			check(ctx.computeOnClient(mc -> mc.player.isInWater() && !mc.player.isUnderWater()),
+					"the player should float up to the surface: y=" + ctx.computeOnClient(mc -> mc.player.getY()) + ", pool top " + poolTop.getY());
+			ctx.takeScreenshot("twitchplays-swim");
+			double surfaceY = ctx.computeOnClient(mc -> mc.player.getY());
+			chat(ctx, "duiker", "!sneak 3", 0);
+			ctx.waitTicks(50);
+			double divedY = ctx.computeOnClient(mc -> mc.player.getY());
+			check(divedY < surfaceY - 1, "!sneak should dive: from " + surfaceY + " to " + divedY);
+			ctx.waitTicks(80);
+			check(ctx.computeOnClient(mc -> !mc.player.isUnderWater()), "after sneaking the player floats up again");
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().setEnabled(false));
+			ctx.waitTicks(80);
+			check(ctx.computeOnClient(mc -> mc.player.getY()) < surfaceY - 1, "with control off (F8) the mod must not hold jump");
+			ctx.runOnClient(mc -> TwitchPlaysClient.get().setEnabled(true));
 		}
 	}
 

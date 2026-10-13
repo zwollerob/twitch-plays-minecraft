@@ -31,6 +31,8 @@ public final class Config {
 	public double maxHoldSeconds = 5;
 	/** Twitch moderators and the broadcaster can type !anarchy / !democracy. */
 	public boolean modsCanSwitchMode = true;
+	/** While chat has control, stay afloat in water and lava instead of sinking; sneaking (!sneak) still dives. */
+	public boolean autoSwim = true;
 	public boolean showOverlay = true;
 
 	/** Commands free chat cannot use; only bits and channel points can trigger them. */

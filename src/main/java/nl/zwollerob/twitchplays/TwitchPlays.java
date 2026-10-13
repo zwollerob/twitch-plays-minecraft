@@ -546,6 +546,7 @@ public final class TwitchPlays {
 			greeted = true;
 			greet();
 		}
+		controller.floating = config.enabled && config.autoSwim;
 		controller.tick(mc);
 		alerts.tick(mc, config.alerts);
 		tickTakeover(mc);

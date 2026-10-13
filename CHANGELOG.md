@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 (2026-10-13)
+
+### Zwemmen
+- Je zinkt niet meer in water: zolang chat de besturing heeft, houdt de mod de springtoets vast als je in water of lava bent, zodat je blijft drijven en niet verdrinkt.
+- Duiken kan met `!sneak`; daarna kom je vanzelf weer boven. Met F8 (besturing uit) zwem je helemaal zelf.
+- Uit te zetten met `autoSwim` in de config.
+
 ## 1.3.0 (2026-10-12)
 
 ### Donaties via TipeeeStream

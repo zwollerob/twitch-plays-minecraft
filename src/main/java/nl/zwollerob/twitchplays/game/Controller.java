@@ -89,6 +89,8 @@ public final class Controller {
 	private int inventoryTicks;
 	/** Crafting and smelting, which work in a screen of their own. */
 	public final Workshop workshop = new Workshop();
+	/** Keep the player afloat in water and lava (set every tick from the config, only while chat has control). */
+	public boolean floating;
 
 	/** Whether chat input can be applied right now (in a world, no menu open, not paused). */
 	public static boolean canControl(Minecraft mc) {
@@ -124,6 +126,12 @@ public final class Controller {
 
 		if (walk != null) {
 			tickWalk(mc.options, player);
+		}
+
+		// Chat can't keep space pressed, so the player would sink and drown. Hold jump while in water or lava,
+		// like a player does to stay up; sneaking (chat's !sneak or the streamer's own key) still dives.
+		if (floating && player.isInLiquid() && !player.isPassenger() && !player.getAbilities().flying && !mc.options.keyShift.isDown()) {
+			hold(mc.options.keyJump, 2);
 		}
 
 		Iterator<Map.Entry<KeyMapping, Integer>> it = holds.entrySet().iterator();

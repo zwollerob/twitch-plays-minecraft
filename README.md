@@ -15,7 +15,7 @@ Je hebt nodig: Minecraft Java Edition **26.3** op Windows, de officiële Minecra
 
 1. **Fabric Loader**: download de installer van https://fabricmc.net/use/installer/, kies *Client*, Minecraft-versie **26.3** en Loader **0.19.5** (of nieuwer), en klik *Install*. In de launcher verschijnt een profiel "fabric-loader-26.3".
 2. **Fabric API** voor 26.3 (bijv. `fabric-api-0.162.0+26.3.jar`), van https://modrinth.com/mod/fabric-api.
-3. **Twitch Plays**: de jar (bijv. `twitchplays-1.3.0.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
+3. **Twitch Plays**: de jar (bijv. `twitchplays-1.3.1.jar`) uit de nieuwste release op https://github.com/zwollerob/twitch-plays-minecraft/releases. Bij een update vervang je de oude jar; laat er maar één in de map `mods` staan.
 
 Zet de jars van stap 2 en 3 in de map `mods` van je Minecraft-map (standaard `%APPDATA%\.minecraft\mods`) en start het Fabric-profiel.
 
@@ -343,6 +343,7 @@ Het bestand is `config\twitchplays.json` in je Minecraft-map (standaard `%APPDAT
 | `userCooldownMs` | `1500` | Hoe lang één kijker moet wachten tussen commando's (anarchie) |
 | `maxHoldSeconds` | `5` | Maximale duur voor lopen/springen etc. |
 | `modsCanSwitchMode` | `true` | Mods mogen `!anarchie`/`!democratie` typen |
+| `autoSwim` | `true` | Niet zinken in water en lava zolang chat de besturing heeft; `!sneak` duikt |
 | `paidOnly` | dropstack, shuffle, unequip | Alleen via bits of kanaalpunten |
 | `bitsCost` / `bitsDefaultCost` | zie boven | Bits per commando |
 | `paidIngredients` | diamond, netherite_ingot, netherite_scrap, ancient_debris | Craften/smelten met deze ingrediënten alleen via bits, kanaalpunten of een overname. Itemnamen in het Engels, bijv. `"emerald"` erbij |
@@ -379,6 +380,7 @@ Verder houdt de mod sleutels en tokens uit de rest van Minecraft:
 
 ## Goed om te weten
 
+- **Zwemmen**: zolang chat de besturing heeft, drijf je vanzelf in water en lava, net alsof je de spatiebalk ingedrukt houdt. Zo verdrink je niet omdat chat niet snel genoeg `!jump` typt. Duiken doe je met `!sneak 3`; daarna kom je vanzelf weer boven. Met F8 (besturing uit) zwem je weer helemaal zelf. Uitzetten kan met `autoSwim` in de config.
 - Zet "pauzeren bij focusverlies" uit: druk in het spel op **F3 + P**. Anders pauzeert het spel zodra je naar OBS klikt, en reageert het niet meer op chat. Staat er een menu open (Esc, inventory, chat), dan doet chat even niets; de overlay toont dan "gepauzeerd".
 - Houd jij zelf een toets op het toetsenbord ingedrukt terwijl chat hem loslaat, dan blijft jouw toets gewoon ingedrukt.
 - Staat "sluipen" bij jou op *wisselen* in plaats van *vasthouden*, dan blijft `!sneak` aan tot het volgende `!sneak`.
